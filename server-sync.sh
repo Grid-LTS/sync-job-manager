@@ -18,7 +18,7 @@ if [ -n "$2" ]; then
 	files+=("$2")
 else
 	i=0
-	confdir="${HOME}/.filesync"
+	confdir="${HOME}/.sync-conf"
 	while read -r -d ''; do
 		files+=("$REPLY")
 	done < <(find $confdir -type f -name '*.conf' -print0)
@@ -41,7 +41,10 @@ sync_git_repo() {
 	echo $reponame
 	path="${path/#\~/$HOME}"
 	cd $path
+	echo "Fetch changes from the server"
+	git fetch
 	if [ "$action" == "push" ]; then
+		git fetch > /dev/null
 		git push --all
 		echo -e "\n"
 	fi
@@ -60,6 +63,12 @@ if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
 		if [ -f $conffile ]; then
 			while read source url; do
+			source=${source// } # remove spaces
+			# ignore comments or empty lines
+			if [[ "$source" == \#* || "$source" == "" ]]; then
+				continue
+			fi
+			
 			if [[ -z "$url" ]]; then
 				case "$source" in
 					\[git\]) mode="git"

@@ -1,0 +1,4 @@
+# comments start can be made
+# empty lines are ignored
+[git]
+~/myProject/myRepo ssh://user@gitserver//path/to/git/bare/repo
