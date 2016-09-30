@@ -24,40 +24,6 @@ else
 	done < <(find $confdir -type f -name '*.conf' -print0)
 fi
 
-# takes the path to the repo and returns the last two directories
-get_repo_name(){
-	base=$(basename $1)
-	dir=$(basename $(dirname $1))
-	name="${dir}/${base}"
-	echo $name
-	return
-}
-
-sync_git_repo() {
-	start=$(pwd)
-	path=$2
-	action=$1
-	reponame=$(get_repo_name $path)
-	echo $reponame
-	path="${path/#\~/$HOME}"
-	cd $path
-	echo "Fetch changes from the server"
-	git fetch
-	if [ "$action" == "push" ]; then
-		git fetch > /dev/null
-		git push --all
-		echo -e "\n"
-	fi
-	if [ "$action" == "pull" ]; then
-		while read branch; do
-			echo $branch
-			git checkout $branch >> /dev/null 
-			git pull
-		done < <(git for-each-ref --format='%(refname:short)' refs/heads/) 
-	fi
-	echo -e "\n"
-	cd $start
-}
 
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
@@ -80,7 +46,7 @@ if [ ${#files[@]} -ne 0 ]; then
 				fi
 		 
 				case $mode in
-					git) sync_git_repo $action $source $url;;
+					git) src/sync_git_repo $action $source $url >&1 ;;
 					*) continue;;
 				esac		
 			done < $conffile

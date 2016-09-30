@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# takes the path to the repo and returns the last two directories
+get_repo_name(){
+	base=$(basename $1)
+	dir=$(basename $(dirname $1))
+	name="${dir}/${base}"
+	echo $name
+	return
+}
+
+change_to_repo() {
+	path=$1
+	remote=$2
+	url=$3
+	parent_dir=$(dirname $path)
+	repo=$(basename $path)
+	if [ -d $path/.git ]; then
+		cd $path
+	else
+		if [ -d $parent_dir ]; then
+			cd $parent_dir
+			rm -r $repo 
+		else 
+			mkdir -p $parent_dir
+		fi
+		cd $parent_dir
+		echo "Clone to repository first with url $url"
+		git clone --origin $remote $url $repo
+		cd $path
+	fi	
+}
+	
+start=$(pwd)
+path=$2
+action=$1
+url=$3
+IFS_OLD=$IFS
+IFS='|'
+read -a info <<< "$url"
+if [ ${#info[@]} -gt 1 ]; then
+	remote="${info[0]}"
+	url="${info[1]}"
+else
+	# take standard remote name
+	remote="origin"
+fi
+IFS=$IFS_OLD
+reponame=$(get_repo_name $path)
+echo $reponame
+path="${path/#\~/$HOME}"
+change_to_repo $path $remote $url
+echo "Fetch changes from the server"
+git fetch $remote
+if [ "$action" == "push" ]; then
+	git push --all --repo=$remote
+	echo -e "\n"
+fi
+if [ "$action" == "pull" ]; then
+	while read branch; do
+		# only local branches are considered
+		echo $branch
+		git checkout $branch >> /dev/null 
+		git pull $remote $branch
+	done < <(git for-each-ref --format='%(refname:short)' refs/heads/) 
+fi
+echo -e "\n"
+cd $start
+
+
