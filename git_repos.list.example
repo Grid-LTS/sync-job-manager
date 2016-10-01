@@ -1,0 +1,4 @@
+# comments start with #
+# empty lines are ignored
+~/path/to/my/repo/ "My Name" forsale@example.com
+

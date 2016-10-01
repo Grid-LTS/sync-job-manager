@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# set global parameters
+IFS=' '
+
 mode="git"
 cwd=$(pwd)
 action=$1
@@ -16,7 +19,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 case "$action" in
 			pull) 	;;
 			push)	;;
-			*) echo "Only push or pull are allowed actions"
+			set-conf) $DIR/src/set_repo_config
+						exit 0;;
+			*) echo "Only push, pull, set-conf are allowed actions"
 			exit 1;;
 esac
 
