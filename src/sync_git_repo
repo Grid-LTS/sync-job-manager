@@ -32,9 +32,11 @@ change_to_repo() {
 }
 	
 start=$(pwd)
-path=$2
+
 action=$1
-url=$3
+force=$2
+path=$3
+url=$4
 IFS_OLD=$IFS
 IFS='|'
 read -a info <<< "$url"
@@ -51,17 +53,28 @@ echo $reponame
 path="${path/#\~/$HOME}"
 change_to_repo $path $remote $url
 echo "Fetch changes from the server"
-git fetch $remote
+git fetch $remote 
 if [ "$action" == "push" ]; then
-	git push --all --repo=$remote
+	if [ $force -eq 1 ]; then
+		# forced push
+		git push -f --all --repo=$remote
+	else
+		git push --all --repo=$remote
+	fi
 	echo -e "\n"
 fi
 if [ "$action" == "pull" ]; then
 	while read branch; do
 		# only local branches are considered
 		echo $branch
-		git checkout $branch >> /dev/null 
-		git pull $remote $branch
+		git checkout $branch >> /dev/null
+		if [ $force -eq 1 ]; then
+			# will reset the working branch to the remote
+			# something like a 'forced pull'
+			git reset --hard "${remote}/${branch}" >> /dev/null
+		else
+			git pull $remote $branch
+		fi
 	done < <(git for-each-ref --format='%(refname:short)' refs/heads/) 
 fi
 echo -e "\n"

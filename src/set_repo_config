@@ -26,7 +26,7 @@ if [ -f $path ]; then
 		read repo_path email <<< "$line"
 		repo_path="${repo_path/#\~/$HOME}"
 		cd $repo_path
-		git config user.name "\'${name}\'"
+		git config user.name "${name}"
 		git config user.email $email
 	done < $path
 else

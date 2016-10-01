@@ -5,8 +5,7 @@ IFS=' '
 
 mode="git"
 cwd=$(pwd)
-action=$1
-file=$2
+force=0
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -16,14 +15,24 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-case "$action" in
-			pull) 	;;
-			push)	;;
-			set-conf) $DIR/src/set_repo_config
+while [[ -n $1 ]]; do
+	case "$1" in
+			pull) action=pull 	;;
+			push) action=push	;;
+			set-conf | set-config) $DIR/src/set_repo_config
 						exit 0;;
-			*) echo "Only push, pull, set-conf are allowed actions"
-			exit 1;;
-esac
+			-f | --force) force=1;;
+			--file) shift file=$1;;
+			*)	if [ -f "$1" ]; then
+					file=$1
+				else
+					echo "Only push, pull, set-conf are allowed actions"
+					exit 1
+				fi 
+				;;
+	esac
+	shift
+done
 
 # collect all conf-files in an array
 files=()
@@ -59,7 +68,7 @@ if [ ${#files[@]} -ne 0 ]; then
 				fi
 		 
 				case $mode in
-					git) $DIR/src/sync_git_repo $action $source $url >&1 ;;
+					git) $DIR/src/sync_git_repo $action $force $source $url >&1 ;;
 					*) continue;;
 				esac		
 			done < $conffile
