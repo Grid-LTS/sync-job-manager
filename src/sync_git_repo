@@ -53,8 +53,19 @@ echo $reponame
 path="${path/#\~/$HOME}"
 change_to_repo $path $remote $url
 echo "Fetch changes from the server"
-git fetch $remote 
+git fetch $remote
 if [ "$action" == "push" ]; then
+	# first push branches with no remote tracking the branch
+	while read branch upstream; do
+		#upstream is the remote tracking branch
+		if [ -z "$upstream" ]; then
+			echo "New local branch $branch"
+			#git branch --set-upstream-to="${remote}/${branch}" $branch
+			git checkout "$branch" >> /dev/null
+			git push -u $remote $branch
+		fi
+	done < <(git for-each-ref --format='%(refname:short) %(push:short)' refs/heads/)
+	#does not work: < <(git branch -vv | grep -E -v '\[.*\]')
 	if [ $force -eq 1 ]; then
 		# forced push
 		git push -f --all --repo=$remote
@@ -62,6 +73,7 @@ if [ "$action" == "push" ]; then
 		git push --all --repo=$remote
 	fi
 	echo -e "\n"
+	
 fi
 if [ "$action" == "pull" ]; then
 	while read branch; do
