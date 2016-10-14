@@ -20,7 +20,9 @@ change_to_repo() {
 	else
 		if [ -d $parent_dir ]; then
 			cd $parent_dir
-			rm -r $repo 
+			if [ -d $repo ]; then
+				rm -r $repo
+			fi 
 		else 
 			mkdir -p $parent_dir
 		fi
