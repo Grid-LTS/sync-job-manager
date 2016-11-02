@@ -22,17 +22,17 @@ change_to_repo() {
 			cd $parent_dir
 			if [ -d $repo ]; then
 				rm -r $repo
-			fi 
-		else 
+			fi
+		else
 			mkdir -p $parent_dir
 		fi
 		cd $parent_dir
 		echo "Clone to repository first with url $url"
 		git clone --origin $remote $url $repo
 		cd $path
-	fi	
+	fi
 }
-	
+
 start=$(pwd)
 
 action=$1
@@ -75,7 +75,6 @@ if [ "$action" == "push" ]; then
 		git push --all --repo=$remote
 	fi
 	echo -e "\n"
-	
 fi
 if [ "$action" == "pull" ]; then
 	while read branch; do
@@ -89,9 +88,8 @@ if [ "$action" == "pull" ]; then
 		else
 			git pull $remote $branch
 		fi
-	done < <(git for-each-ref --format='%(refname:short)' refs/heads/) 
+	done < <(git for-each-ref --format='%(refname:short)' refs/heads/)
 fi
+git checkout master
 echo -e "\n"
 cd $start
-
-
