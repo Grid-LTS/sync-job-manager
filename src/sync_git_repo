@@ -9,6 +9,21 @@ get_repo_name(){
 	return
 }
 
+# removes the first component of a branch name which for a remote ref is the name of the remote
+get_branch_name_from_remote_path() {
+	path=$1
+	name=$(basename $path)
+	path=$(dirname $path)
+	while [ "$(dirname $path)" != '.' ]; do
+		base=$(basename $path)
+		name="${base}/$name"
+		path=$(dirname $path)
+	done
+	echo $name
+	return
+}
+
+
 change_to_repo() {
 	path=$1
 	remote=$2
@@ -31,6 +46,12 @@ change_to_repo() {
 		git clone --origin $remote $url $repo
 		cd $path
 	fi
+}
+
+containsElement() {
+	local e
+  for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+  return 1
 }
 
 start=$(pwd)
@@ -77,18 +98,44 @@ if [ "$action" == "push" ]; then
 	echo -e "\n"
 fi
 if [ "$action" == "pull" ]; then
+	# remove local tracking branches, where remotes do not exist
+	git fetch $remote --prune
+	# 1) gather all existing local branches
+	localb=()
 	while read branch; do
-		# only local branches are considered
-		echo $branch
-		git checkout $branch >> /dev/null
-		if [ $force -eq 1 ]; then
-			# will reset the working branch to the remote
-			# something like a 'forced pull'
-			git reset --hard "${remote}/${branch}" >> /dev/null
-		else
-			git pull $remote $branch
-		fi
+		# add local branches to the registry
+		localb+=("$branch")
 	done < <(git for-each-ref --format='%(refname:short)' refs/heads/)
+
+
+	# 2) pull in all the remote branches
+	while read branch; do
+		branchBase=$(get_branch_name_from_remote_path $branch)
+		if [[ "$branchBase" != "HEAD" ]]; then
+			echo $branchBase
+				# check if the local branch exits
+			if containsElement "$branchBase" "${localb[@]}"; then
+				git checkout $branchBase >> /dev/null
+				if [ $force -eq 1 ]; then
+					# will reset the working branch to the remote
+					# something like a 'forced pull'
+					git reset --hard "${remote}/$branchBase" >> /dev/null
+				else
+					git pull $remote $branchBase
+				fi
+				if [ $? -ne 0 ]; then
+					# remote ref for the local branch does not exist
+					# unexpected ERROR since the we are iterating over existing remote refs  
+					echo "ERROR: Local branch "$branchBase" does not have a remote ref"
+				fi
+			else
+				echo "Set up local tracking branch"
+				# remote branch has not a local ref, create it here
+				git checkout -b $branchBase $branch
+			fi
+		fi
+	done < <(git for-each-ref --format='%(refname:short)' refs/remotes/)
+
 fi
 git checkout master
 echo -e "\n"
