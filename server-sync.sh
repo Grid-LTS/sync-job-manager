@@ -28,7 +28,7 @@ while [[ -n $1 ]]; do
 				else
 					echo "Only push, pull, set-conf are allowed actions"
 					exit 1
-				fi 
+				fi
 				;;
 	esac
 	shift
@@ -41,9 +41,10 @@ if [ -n "$2" ]; then
 else
 	i=0
 	confdir="${HOME}/.sync-conf"
+  echo $confdir
 	while read -r -d ''; do
 		files+=("$REPLY")
-	done < <(find $confdir -type f -name '*.conf' -print0)
+	done < <(find -L $confdir -type f -name '*.conf' -print0)
 fi
 
 
@@ -56,7 +57,7 @@ if [ ${#files[@]} -ne 0 ]; then
 			if [[ "$source" == \#* || "$source" == "" ]]; then
 				continue
 			fi
-			
+
 			if [[ -z "$url" ]]; then
 				case "$source" in
 					\[git\]) mode="git"
@@ -66,14 +67,12 @@ if [ ${#files[@]} -ne 0 ]; then
 				esac
 					continue
 				fi
-		 
+
 				case $mode in
 					git) $DIR/src/sync_git_repo $action $force $source $url >&1 ;;
 					*) continue;;
-				esac		
+				esac
 			done < $conffile
 		fi
 done
 fi
-
-
