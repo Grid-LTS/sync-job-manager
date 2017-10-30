@@ -60,7 +60,7 @@ fi
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
 		if [ -f $conffile ]; then
-			while read source url settings; do
+			while read source url settings || [ -n "$source" ]; do
         # read config line by line
 			  source=${source// } # remove spaces
 			  # ignore comments or empty lines
