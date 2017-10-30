@@ -1,0 +1,38 @@
+#!/bin/bash
+
+mode="git"
+# set config (email, name) for Git repositories
+
+repo=$1
+#settings are a space sepated list of string arguments
+settings=$2
+
+# start parsing settings string
+
+# cut out first argument that might be quoted (or not) and then continue
+# parsing the other elements
+
+if [[ $settings == \"* ]]; then
+  settings=${settings#\"}
+	name=$(cut -d '"' -f1 <<< "$settings")
+	settings=${settings#$name\"}
+	# extract second field
+	email=$(sed 's/"[^"]*"//' <<< "$settings")
+else
+	# no delimiting quotes
+	name=$(cut -d ' ' -f1 <<< "$settings")
+	# delete field
+	email=$(cut -d ' ' -f2- <<< "$settings")
+fi
+
+#remove remaining whitespace
+email=$(echo -e "$email" | tr -d '[:space:]')
+repo_path="${repo/#\~/$HOME}"
+if [ -d $repo_path ]; then
+  cd $repo_path
+	git config user.name "$name"
+	git config user.email $email
+else
+	echo "The repo $repo_path  cannot be found. Skip."
+	exit 1
+fi

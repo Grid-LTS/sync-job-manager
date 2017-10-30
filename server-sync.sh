@@ -26,19 +26,15 @@ while [[ -n $1 ]]; do
 	case "$1" in
 			pull) action=pull 	;;
 			push) action=push	;;
-			set-conf | set-config) $DIR/src/set_repo_config
-						exit 0;;
+			set-conf | set-config) action=save_settings
+						                 ;;
 			-f | --force) force=1;;
 			--file) shift
               file=$1;;
       --env) shift
              export DEV_ENV=$1;;
-			*)	if [ -f "$1" ]; then
-					file=$1
-				else
-					echo "Only push, pull, set-conf are allowed actions"
+			*)  echo "Only push, pull, set-conf are allowed actions"
 					exit 1
-				fi
 				;;
 	esac
 	shift
@@ -64,42 +60,59 @@ fi
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
 		if [ -f $conffile ]; then
-			while read source url; do
-			source=${source// } # remove spaces
-			# ignore comments or empty lines
-			if [[ "$source" == \#* || "$source" == "" ]]; then
-				continue
-			fi
-      echo "$source" | grep -q 'env'
-      is_env_restricted=$?
-      if [ $is_env_restricted -eq 0 ] && [ -z "$DEV_ENV" ]; then
-        #conf file restricted to certain environments, but no environment
-        # specified. skip
-        break
-     fi
-     if [ $is_env_restricted -eq 0 ] && [ -n "$DEV_ENV" ]; then
-       # check if given environment is part of the specified envs
-          source=${source#env=}
-          IFS_OLD=$IFS
-          # read environemnts into an array $envs
-          IFS=', ' read -r -a envs <<< "$source"
-          #stop reading this config file if only valid for another environment
-          ! containsElement "$DEV_ENV" "${envs[@]}" && break
-      fi
-			if [[ -z "$url" ]]; then
-				case "$source" in
-					\[git\]) mode="git"
-						;;
-					\[unison\]) mode="unison"
-						;;
-				esac
-					continue
-				fi
+			while read source url settings; do
+        # read config line by line
+			  source=${source// } # remove spaces
+			  # ignore comments or empty lines
+			  if [[ "$source" == \#* || "$source" == "" ]]; then
+				  continue
+			  fi
+        if [[ -z "$url" ]]; then
+          echo "$source" | grep -q 'env'
+          is_env_restricted=$?
+          if [ $is_env_restricted -eq 0 ] && [ -z "$DEV_ENV" ]; then
+            #conf file restricted to certain environments, but no environment
+            # specified. skip
+            break
+          fi
+          if [ $is_env_restricted -eq 0 ] && [ -n "$DEV_ENV" ]; then
+            # check if given environment is part of the specified envs
+            source=${source#env=}
+            IFS_OLD=$IFS
+            # read environemnts into an array $envs
+            IFS=', '
+            read -r -a envs <<< "$source"
+            #stop reading this config file if only valid for another environment
+            ! containsElement "$DEV_ENV" "${envs[@]}" && break
+            IFS=$IFS_OLD
+            continue
+          fi
+				  case "$source" in
+					  \[git\]) mode="git"
+						        ;;
+					  \[unison\]) mode="unison"
+                      #not yet implemented
+                      #stop reading of config file
+                      echo 'break?'
+                      ;;
+            *) mode=""
+              ;;
+				  esac
+				  continue
+			  fi
+        if [ -z "$mode" ]; then
+          echo 'No syncing tool given. Ignore conffile'
+          break;
+        fi
 
-				case $mode in
-					git) $DIR/src/sync_git_repo $action $force $source $url >&1 ;;
-					*) continue;;
-				esac
+        if [ $action == 'save_settings' ]; then
+          execute="${mode}_settings"
+          $DIR/src/$execute $source "$settings" >&1
+        else
+          # sync with repos
+          execute="${mode}_sync"
+          $DIR/src/$execute $action $force $source $url >&1
+        fi
 			done < $conffile
 		fi
 done
