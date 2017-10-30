@@ -1,4 +1,8 @@
 # comments start with #
 # empty lines are ignored
+
+#you may give comma-separated list of environments (environment is saved in $DEV_ENV ) for which this configuration applies
+env=home,playground
+
 [git]
 ~/myProject/myRepo origin|ssh://user@gitserver//path/to/git/bare/repo
