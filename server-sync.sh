@@ -106,11 +106,11 @@ if [ ${#files[@]} -ne 0 ]; then
         fi
 
         if [ $action == 'save_settings' ]; then
-          execute="${mode}_settings"
+          execute="${mode}-settings"
           $DIR/src/$execute $source "$settings" >&1
         else
           # sync with repos
-          execute="${mode}_sync"
+          execute="${mode}-sync"
           $DIR/src/$execute $action $force $source $url >&1
         fi
 			done < $conffile
