@@ -5,4 +5,10 @@
 env=home,playground
 
 [git]
-~/myProject/myRepo origin|ssh://user@gitserver//path/to/git/bare/repo
+# local path | server path | git config.name | git config.email
+~/myProject/myRepo   origin|ssh://user@gitserver//path/to/git/bare/repo   "My Name"   forsale@example.com
+
+# unison: list local folders that are synced with the given target folder on the server, using given profile
+[unison]
+# local path | server path | unison profile
+~/local/path   ssh://<user>@<server>//home/<user>/path   default
