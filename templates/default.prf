@@ -1,0 +1,4 @@
+# default profile
+# will be used when no profile is given in the *.conf files
+root = ${local-path}
+root = ${server-path}

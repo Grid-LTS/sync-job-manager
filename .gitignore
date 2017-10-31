@@ -1,1 +1,4 @@
 dirs.conf
+templates/*
+!templates/default.prf
+!templates/unison_profile.prf.example

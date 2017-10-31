@@ -1,0 +1,23 @@
+# usual unison profile file that can be customized
+# placeholders of the form ${} should not be touched
+# this profile can is referenced by its filename (without the .prf suffix) in the syncing conf files
+root = ${local-path}
+root = ${server-path}
+
+# additional black list for ignoring folders
+ignore = Path {Cache}
+ignore = PATH {.git}
+
+# other files, e.g. compiled files, ide artefacts
+ignore = Name *_
+ignore = Name temp.*
+ignore = Name *.o
+ignore = Name *.tmp
+
+
+# additional backup, optional
+backuplocation = local
+backup = Name *
+backupprefix = alt/
+maxbackups = 3
+backupsuffix = .$VERSION
