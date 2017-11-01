@@ -16,7 +16,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   SOURCE="$(readlink "$SOURCE")"
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+export DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 . $DIR/src/helper.sh
 
@@ -91,12 +91,12 @@ if [ ${#files[@]} -ne 0 ]; then
 					  \[git\]) mode="git"
 						        ;;
 					  \[unison\]) mode="unison"
-                      #not yet implemented
-                      #stop reading of config file
-                      echo 'break?'
+                      # no settings can be saved for unison
+                      echo 'No settings can be saved for unison projects'
+                      [ $action == 'save_settings' ] && break
                       ;;
-            *) mode=""
-              ;;
+                      *) mode=""
+                      ;;
 				  esac
 				  continue
 			  fi
@@ -111,7 +111,7 @@ if [ ${#files[@]} -ne 0 ]; then
         else
           # sync with repos
           execute="${mode}-sync"
-          $DIR/src/$execute $action $force $source $url >&1
+          $DIR/src/$execute $action $force $source $url "$settings" >&1
         fi
 			done < $conffile
 		fi

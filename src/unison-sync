@@ -1,1 +1,34 @@
 #!/bin/bash
+
+template_dir=$DIR/templates
+
+action=$1
+force=$2
+local_path=$3
+server_path=$4
+profile=$5
+
+if [ -z "$profile" ]; then
+  #if no unison profile chose, use default profile
+  profile=default
+fi
+
+if [[ ! "$profile" == *\.prf ]]; then
+   # append profile file suffix
+  profile=$profile".prf"
+fi
+
+# copy the right profile template and replace the parameters
+
+if [ ! -f $DIR/templates/$profile ]; then
+  echo "There is no profile file $profile".
+  exit 1
+fi
+cp $DIR/templates/$profile $DIR/tmp/
+sed -e "s|\${local_path}|${local_path}|" -e "s|\${server_path}|${server_path}|" $DIR/tmp/$profile
+
+# finally sync files with the profile
+unison  $DIR/tmp/$profile
+
+# clean up
+rm $DIR/tmp/$profile
