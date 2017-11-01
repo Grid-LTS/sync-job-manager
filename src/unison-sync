@@ -38,6 +38,11 @@ if [ $? != 0 ]; then
   login="${USER}@${login}"
 fi
 
+#create directories, locally and remotely
+if [ ! -d $local_path ]; then
+  mkdir -p $local_path
+fi
+
 # create path on remote machine for syncing
 ssh $login "mkdir -p ${remote_path}"
 
