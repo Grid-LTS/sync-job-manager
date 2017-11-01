@@ -7,6 +7,7 @@ server_path=$4
 profile=$5
 
 local_path="${local_path/#\~/$HOME}"
+mkdir ~/.unison &> /dev/null
 
 if [ -z "$profile" ]; then
   #if no unison profile chose, use default profile
@@ -41,8 +42,7 @@ fi
 ssh $login "mkdir -p ${remote_path}"
 
 #prepare profile for the unison sync
-cp $DIR/templates/$profile_file ~/.unison/
-sed -i -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" ~/.unison/$profile_file
+sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $DIR/templates/$profile_file > ~/.unison/$profile_file
 
 # finally sync files with the profile
 unison  $profile
