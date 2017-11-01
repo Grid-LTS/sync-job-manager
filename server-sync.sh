@@ -88,15 +88,18 @@ if [ ${#files[@]} -ne 0 ]; then
             continue
           fi
 				  case "$source" in
-					  \[git\]) mode="git"
-						        ;;
-					  \[unison\]) mode="unison"
-                      # no settings can be saved for unison
-                      echo 'No settings can be saved for unison projects'
-                      [ $action == 'save_settings' ] && break
+					  \[git\])   mode="git"
+                      check_client_available "git"
+                      [ $? != 0 ] && break
                       ;;
-                      *) mode=""
-                      ;;
+					 \[unison\])  mode="unison"
+                        [ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
+                        check_client_available "unison"
+                        [ $? != 0 ] && break
+                        ;;
+                    *)  echo "The sync mode '${mode}' is not supported."
+                        break
+                        ;;
 				  esac
 				  continue
 			  fi
