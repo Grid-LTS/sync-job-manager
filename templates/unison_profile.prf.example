@@ -1,8 +1,8 @@
 # usual unison profile file that can be customized
-# placeholders of the form ${} should not be touched
+# placeholders of the form @ ... @ should not be touched
 # this profile can is referenced by its filename (without the .prf suffix) in the syncing conf files
-root = ${local-path}
-root = ${server-path}
+root = @local_path@
+root = @server_path@
 
 # additional black list for ignoring folders
 ignore = Path {Cache}
@@ -21,3 +21,6 @@ backup = Name *
 backupprefix = alt/
 maxbackups = 3
 backupsuffix = .$VERSION
+
+
+silent=true

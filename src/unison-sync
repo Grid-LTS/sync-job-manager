@@ -1,34 +1,51 @@
 #!/bin/bash
 
-template_dir=$DIR/templates
-
 action=$1
 force=$2
 local_path=$3
 server_path=$4
 profile=$5
 
+local_path="${local_path/#\~/$HOME}"
+
 if [ -z "$profile" ]; then
   #if no unison profile chose, use default profile
-  profile=default
+  profile=sjm_default
 fi
 
-if [[ ! "$profile" == *\.prf ]]; then
-   # append profile file suffix
-  profile=$profile".prf"
+if [[ "$profile" != *\.prf ]]; then
+   # get profile file name by appending suffix
+  profile_file=$profile'.prf'
+else
+  profile_file=$profile
+  profile=${profile/%\.prf}
 fi
 
 # copy the right profile template and replace the parameters
 
-if [ ! -f $DIR/templates/$profile ]; then
-  echo "There is no profile file $profile".
+if [ ! -f $DIR/templates/$profile_file ]; then
+  echo "There is no profile file $profile_file".
   exit 1
 fi
-cp $DIR/templates/$profile $DIR/tmp/
-sed -e "s|\${local_path}|${local_path}|" -e "s|\${server_path}|${server_path}|" $DIR/tmp/$profile
+
+# get the ssh login and remote path
+login=$(awk -F "\/\/" '{print $2}' <<< "$server_path" )
+remote_path=$(awk -F "\/\/" '{print $3}' <<< "$server_path")
+remote_path="/"$remote_path
+echo "$login" | grep '@' &> /dev/null;
+if [ $? != 0 ]; then
+  login="${USER}@${login}"
+fi
+
+# create path on remote machine for syncing
+ssh $login "mkdir -p ${remote_path}"
+
+#prepare profile for the unison sync
+cp $DIR/templates/$profile_file ~/.unison/
+sed -i -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" ~/.unison/$profile_file
 
 # finally sync files with the profile
-unison  $DIR/tmp/$profile
+unison  $profile
 
 # clean up
-rm $DIR/tmp/$profile
+rm ~/.unison/$profile_file

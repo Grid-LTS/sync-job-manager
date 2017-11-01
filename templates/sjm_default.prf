@@ -1,4 +1,7 @@
 # default profile
 # will be used when no profile is given in the *.conf files
-root = ${local_path}
-root = ${server_path}
+root = @local_path@
+root = @server_path@
+
+
+silent=true
