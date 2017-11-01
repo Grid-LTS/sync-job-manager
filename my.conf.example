@@ -9,6 +9,7 @@ env=home,playground
 ~/myProject/myRepo   origin|ssh://user@gitserver//path/to/git/bare/repo   "My Name"   forsale@example.com
 
 # unison: list local folders that are synced with the given target folder on the server, using given profile
+# for the specified protocoll there must be a corresponding template under /templates/<profile_name>.prf
 [unison]
 # local path | server path | unison profile
-~/local/path   ssh://<user>@<server>//home/<user>/path   default
+~/local/path   ssh://<user>@<server>//home/<user>/path   sjm_default
