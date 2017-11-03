@@ -125,7 +125,7 @@ if [ "$action" == "pull" ]; then
 				fi
 				if [ $? -ne 0 ]; then
 					# remote ref for the local branch does not exist
-					# unexpected ERROR since the we are iterating over existing remote refs  
+					# unexpected ERROR since the we are iterating over existing remote refs
 					echo "ERROR: Local branch "$branchBase" does not have a remote ref"
 				fi
 			else

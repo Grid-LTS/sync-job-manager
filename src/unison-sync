@@ -42,6 +42,7 @@ fi
 if [ ! -d $local_path ]; then
   mkdir -p $local_path
 fi
+echo "unison sync ${local_path}"
 
 # create path on remote machine for syncing
 ssh $login "mkdir -p ${remote_path}"
@@ -50,7 +51,7 @@ ssh $login "mkdir -p ${remote_path}"
 sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $DIR/templates/$profile_file > ~/.unison/$profile_file
 
 # finally sync files with the profile
-unison  $profile
-
+unison -auto $profile
 # clean up
 rm ~/.unison/$profile_file
+echo -e "\n"

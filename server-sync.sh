@@ -60,7 +60,19 @@ fi
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
 		if [ -f $conffile ]; then
-			while read source url settings || [ -n "$source" ]; do
+      # read conf files line by line and start client for each line
+      # read needs to use a different descriptor for stdin because we will run a ssh command inside which also reads from stdin
+      # see https://unix.stackexchange.com/questions/107800/using-while-loop-to-ssh-to-multiple-servers
+			while read -u10 line || [ -n "$line" ];
+        do
+        source=$(awk '{print $1}' <<< "$line")
+        url=$(awk '{print $2}' <<< "$line")
+        # read rest of the line into the settings string
+        settings=$(awk '{$1=$2=""; print $0}' <<< "$line")
+        # remove leading white space, see https://stackoverflow.com/questions/369758/how-to-trim-whitespace-from-a-bash-variable
+        settings="$(echo -e "${settings}" | sed -e 's/^[[:space:]]*//')"
+        #remove trailing whitespace
+        settings=$(echo -e "${settings}" | sed -e 's/[[:space:]]*$//')
         # read config line by line
 			  source=${source// } # remove spaces
 			  # ignore comments or empty lines
@@ -116,7 +128,7 @@ if [ ${#files[@]} -ne 0 ]; then
           execute="${mode}-sync"
           $DIR/src/$execute $action $force $source $url "$settings" >&1
         fi
-			done < $conffile
+			done 10< $conffile
 		fi
 done
 fi
