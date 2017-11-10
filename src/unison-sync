@@ -2,9 +2,10 @@
 
 action=$1
 force=$2
-local_path=$3
-server_path=$4
-profile=$5
+ssh_login=$3
+local_path=$4
+server_path=$5
+profile=$6
 
 local_path="${local_path/#\~/$HOME}"
 mkdir ~/.unison &> /dev/null

@@ -1,0 +1,4 @@
+# this file contains global properties (host, ssh login) needed for the sync manager app
+
+ssh_host=myserver
+ssh_user=myusername

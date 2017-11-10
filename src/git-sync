@@ -57,9 +57,15 @@ containsElement() {
 start=$(pwd)
 
 action=$1
-force=$2
-path=$3
-url=$4
+shift
+force=$1
+shift
+ssh_login=$1
+shift
+path=$1
+shift
+url=$1
+
 IFS_OLD=$IFS
 IFS='|'
 read -a info <<< "$url"
@@ -71,6 +77,9 @@ else
 	remote="origin"
 fi
 IFS=$IFS_OLD
+
+#prefix url with ssh-login
+url="ssh://${ssh_login}/${url}"
 reponame=$(get_repo_name $path)
 echo $reponame
 path="${path/#\~/$HOME}"

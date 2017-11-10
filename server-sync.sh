@@ -7,9 +7,7 @@ mode="git"
 cwd=$(pwd)
 force=0
 
-confdir="${HOME}/.sync-conf"
-
-
+confdir="${HOME}/.sync-conf-test"
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -19,15 +17,27 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 export DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-# settings directory that contains global and client specific parameters (credentials, paths) 
+# settings directory that contains global and client specific parameters (credentials, paths)
 if [ -z "$SYNC_SETTINGS_HOME" ]; then
   export SYNC_SETTINGS_HOME=$DIR
 fi
 
 # load global properties like host, ssh-login
 if [ -f "$SYNC_SETTINGS_HOME/server-sync.properties" ]; then
-  . "$SYNC_SETTINGS_HOME/server-sync.properties"
-fi 
+  while IFS== read -r VAR1 VAR2
+  do
+    if [[ "$VAR1" == \#* || "$VAR2" == "" ]]; then
+      continue
+    fi
+    if [ -n "$VAR2" ]; then
+      export "$VAR1=$VAR2"
+    fi
+  done < "$SYNC_SETTINGS_HOME/server-sync.properties"
+else
+  #initialize variables
+  export ssh_user=''
+  export ssh_host=''
+fi
 
 . $DIR/src/helper.sh
 
@@ -48,6 +58,15 @@ while [[ -n $1 ]]; do
 	esac
 	shift
 done
+
+if [ -z "$action" ]; then
+  echo "No action parameter given."
+  exit 1
+fi
+
+if [ -z "$force" ]; then
+  force=0
+fi
 
 if [ -z "$DEV_ENV" ]; then
   echo "Environment parameter \$DEV_ENV is not set."
@@ -108,6 +127,7 @@ if [ ${#files[@]} -ne 0 ]; then
             IFS=$IFS_OLD
             continue
           fi
+
 				  case "$source" in
 					  \[git\])   mode="git"
                       check_client_available "git"
@@ -129,13 +149,23 @@ if [ ${#files[@]} -ne 0 ]; then
           break;
         fi
 
-        if [ $action == 'save_settings' ]; then
+        if [ "$action" == 'save_settings' ]; then
           execute="${mode}-settings"
           $DIR/src/$execute $source "$settings" >&1
         else
+          ssh_login=""
+          # check if ssh login information is given, if yes overwrite default values
+          prefix_ssh_login
+          if [ -z "$ssh_login" ] && [ -n "$ssh_host" ] && [ -n "$ssh_user" ]; then
+            ssh_login="${ssh_user}@${ssh_host}"
+          fi
+          if [ -z "$ssh_login" ]; then
+            echo "No ssh login available for target $url"
+            continue
+          fi
           # sync with repos
           execute="${mode}-sync"
-          $DIR/src/$execute $action $force $source $url "$settings" >&1
+          $DIR/src/$execute $action $force $ssh_login $source "$url" "$settings" >&1
         fi
 			done 10< $conffile
 		fi
