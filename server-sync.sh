@@ -10,6 +10,7 @@ force=0
 confdir="${HOME}/.sync-conf"
 
 
+
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
   DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
@@ -18,9 +19,17 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 export DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+# settings directory that contains global and client specific parameters (credentials, paths) 
+if [ -z "$SYNC_SETTINGS_HOME" ]; then
+  export SYNC_SETTINGS_HOME=$DIR
+fi
+
+# load global properties like host, ssh-login
+if [ -f "$SYNC_SETTINGS_HOME/server-sync.properties" ]; then
+  . "$SYNC_SETTINGS_HOME/server-sync.properties"
+fi 
+
 . $DIR/src/helper.sh
-
-
 
 while [[ -n $1 ]]; do
 	case "$1" in

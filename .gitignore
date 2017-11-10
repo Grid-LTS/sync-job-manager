@@ -1,4 +1,7 @@
 dirs.conf
+mysql.properties
+server-sync.properties
+$SYNC_SETTINGS_HOME/mysql.properties
 templates/*
 !templates/sjm_default.prf
 !templates/unison_profile.prf.example
