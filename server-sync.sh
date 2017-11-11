@@ -18,12 +18,12 @@ done
 export DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 # settings directory that contains global and client specific parameters (credentials, paths)
-if [ -z "$SYNC_SETTINGS_HOME" ]; then
-  export SYNC_SETTINGS_HOME=$DIR
+if [ -z "$SYNC_CONFIG_HOME" ]; then
+  export SYNC_CONFIG_HOME=$DIR
 fi
 
 # load global properties like host, ssh-login
-if [ -f "$SYNC_SETTINGS_HOME/server-sync.properties" ]; then
+if [ -f "$SYNC_CONFIG_HOME/server-sync.properties" ]; then
   while IFS== read -r VAR1 VAR2
   do
     if [[ "$VAR1" == \#* || "$VAR2" == "" ]]; then
@@ -32,7 +32,7 @@ if [ -f "$SYNC_SETTINGS_HOME/server-sync.properties" ]; then
     if [ -n "$VAR2" ]; then
       export "$VAR1=$VAR2"
     fi
-  done < "$SYNC_SETTINGS_HOME/server-sync.properties"
+  done < "$SYNC_CONFIG_HOME/server-sync.properties"
 else
   #initialize variables
   export ssh_user=''
