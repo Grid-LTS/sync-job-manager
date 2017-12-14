@@ -21,11 +21,11 @@ check_client_available () {
 # url may or may not contain the ssh login
 # in the latter case prefix it to the url
 prefix_ssh_login () {
-  part=$(awk -F "\/\/" '{print $2}' <<< "$url" )
+  part=$(awk -F "\\\/\\\/" '{print $2}' <<< "$url" )
   if [[ $part == *"@"* ]]; then
-    prefix=$(awk -F "\/\/" '{print $1}' <<< "$url")
+    prefix=$(awk -F "\\\/\\\/" '{print $1}' <<< "$url")
     prefix=${prefix%ssh:}
-    url=$(awk -F "\/\/" '{print $3}' <<< "$url")
+    url=$(awk -F "\\\/\\\/" '{print $3}' <<< "$url")
     url=${url// }
     url="${prefix}/${url}"
     ssh_login=$part
