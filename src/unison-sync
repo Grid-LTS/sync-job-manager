@@ -28,11 +28,17 @@ else
   profile=${profile/%\.prf}
 fi
 
-# copy the right profile template and replace the parameters
-
-if [ ! -f $DIR/templates/$profile_file ]; then
-  echo "There is no profile file $profile_file".
-  exit 1
+template_dir=unison-templates
+if [ -f $DIR/$template_dir/$profile_file ]; then
+  template_path=$DIR/$template_dir/$profile_file
+else
+  echo "${confdir}/${template_dir}/${profile_file}"
+  if [ -f $confdir/$template_dir/$profile_file ]; then
+    template_path=$confdir/$template_dir/$profile_file
+  else
+    echo "Unison template file ${profile_file} cannot be found."
+    exit 1
+  fi
 fi
 
 remote_path=$server_path
@@ -49,9 +55,9 @@ ssh $ssh_login "mkdir -p ${remote_path}"
 #server_path must contain ssh login
 server_path="ssh://${ssh_login}/${server_path}"
 
-
 #prepare profile for the unison sync
-sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $DIR/templates/$profile_file > ~/.unison/$profile_file
+# copy the right profile template and replace the parameters
+sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$profile_file
 
 # finally sync files with the profile
 unison -auto $profile
