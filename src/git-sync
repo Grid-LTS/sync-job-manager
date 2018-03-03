@@ -109,6 +109,12 @@ fi
 if [ "$action" == "pull" ]; then
 	# remove local tracking branches, where remotes do not exist
 	git fetch $remote --prune
+	# remove first local branches whose remote tracking branches were deleted
+	for branch in `git branch -vv | grep ': gone]' | awk '{print $1}'`
+	do
+		git branch -D $branch
+  done
+
 	# 1) gather all existing local branches
 	localb=()
 	while read branch; do
@@ -135,7 +141,7 @@ if [ "$action" == "pull" ]; then
 				if [ $? -ne 0 ]; then
 					# remote ref for the local branch does not exist
 					# unexpected ERROR since the we are iterating over existing remote refs
-					echo "ERROR: Local branch "$branchBase" does not have a remote ref"
+						echo "ERROR: Local branch "$branchBase" does not have a remote ref"
 				fi
 			else
 				echo "Set up local tracking branch"
