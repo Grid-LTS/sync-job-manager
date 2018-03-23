@@ -5,3 +5,6 @@ server-sync.properties
 templates/*
 !templates/sjm_default.prf
 !templates/unison_profile.prf.example
+
+#Linux system files
+**/.directory
