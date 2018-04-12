@@ -51,7 +51,7 @@ while [[ -n $1 ]]; do
 			--file) shift
               file=$1;;
       --env) shift
-             export DEV_ENV=$1;;
+             export SYNC_ENV=$1;;
 			*)  echo "Only push, pull, set-conf are allowed actions"
 					exit 1
 				;;
@@ -68,9 +68,9 @@ if [ -z "$force" ]; then
   force=0
 fi
 
-if [ -z "$DEV_ENV" ]; then
-  echo "Environment parameter \$DEV_ENV is not set."
-  DEV_ENV=""
+if [ -z "$SYNC_ENV" ]; then
+  echo "Environment parameter \$SYNC_ENV is not set."
+  SYNC_ENV=""
 fi
 
 # collect all conf-files in an array
@@ -110,12 +110,12 @@ if [ ${#files[@]} -ne 0 ]; then
         if [[ -z "$url" ]]; then
           echo "$source" | grep -q 'env'
           is_env_restricted=$?
-          if [ $is_env_restricted -eq 0 ] && [ -z "$DEV_ENV" ]; then
+          if [ $is_env_restricted -eq 0 ] && [ -z "$SYNC_ENV" ]; then
             #conf file restricted to certain environments, but no environment
             # specified. skip
             break
           fi
-          if [ $is_env_restricted -eq 0 ] && [ -n "$DEV_ENV" ]; then
+          if [ $is_env_restricted -eq 0 ] && [ -n "$SYNC_ENV" ]; then
             # check if given environment is part of the specified envs
             source=${source#env=}
             IFS_OLD=$IFS
@@ -123,7 +123,7 @@ if [ ${#files[@]} -ne 0 ]; then
             IFS=', '
             read -r -a envs <<< "$source"
             #stop reading this config file if only valid for another environment
-            ! containsElement "$DEV_ENV" "${envs[@]}" && break
+            ! containsElement "$SYNC_ENV" "${envs[@]}" && break
             IFS=$IFS_OLD
             continue
           fi
