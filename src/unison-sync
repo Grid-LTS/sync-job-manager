@@ -21,7 +21,7 @@ if [ -z "$profile" ]; then
 fi
 
 if [[ "$profile" != *\.prf ]]; then
-   # get profile file name by appending suffix
+  # get profile file name by appending suffix
   profile_file=$profile'.prf'
 else
   profile_file=$profile

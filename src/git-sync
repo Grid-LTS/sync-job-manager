@@ -2,54 +2,54 @@
 
 # takes the path to the repo and returns the last two directories
 get_repo_name(){
-	base=$(basename $1)
-	dir=$(basename $(dirname $1))
-	name="${dir}/${base}"
-	echo $name
-	return
+  base=$(basename $1)
+  dir=$(basename $(dirname $1))
+  name="${dir}/${base}"
+  echo $name
+  return
 }
 
 # removes the first component of a branch name which for a remote ref is the name of the remote
 get_branch_name_from_remote_path() {
-	path=$1
-	name=$(basename $path)
-	path=$(dirname $path)
-	while [ "$(dirname $path)" != '.' ]; do
-		base=$(basename $path)
-		name="${base}/$name"
-		path=$(dirname $path)
-	done
-	echo $name
-	return
+  path=$1
+  name=$(basename $path)
+  path=$(dirname $path)
+  while [ "$(dirname $path)" != '.' ]; do
+    base=$(basename $path)
+    name="${base}/$name"
+    path=$(dirname $path)
+  done
+  echo $name
+  return
 }
 
 
 change_to_repo() {
-	path=$1
-	remote=$2
-	url=$3
-	parent_dir=$(dirname $path)
-	repo=$(basename $path)
-	if [ -d $path/.git ]; then
-		cd $path
-	else
-		if [ -d $parent_dir ]; then
-			cd $parent_dir
-			if [ -d $repo ]; then
-				rm -r $repo
-			fi
-		else
-			mkdir -p $parent_dir
-		fi
-		cd $parent_dir
-		echo "Clone to repository first with url $url"
-		git clone --origin $remote $url $repo
-		cd $path
-	fi
+  path=$1
+  remote=$2
+  url=$3
+  parent_dir=$(dirname $path)
+  repo=$(basename $path)
+  if [ -d $path/.git ]; then
+    cd $path
+  else
+    if [ -d $parent_dir ]; then
+      cd $parent_dir
+      if [ -d $repo ]; then
+        rm -r $repo
+      fi
+    else
+      mkdir -p $parent_dir
+    fi
+    cd $parent_dir
+    echo "Clone to repository first with url $url"
+    git clone --origin $remote $url $repo
+    cd $path
+  fi
 }
 
 containsElement() {
-	local e
+  local e
   for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
   return 1
 }

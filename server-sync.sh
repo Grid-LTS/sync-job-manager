@@ -167,7 +167,7 @@ if [ ${#files[@]} -ne 0 ]; then
           execute="${mode}-sync"
           $DIR/src/$execute $action $force $ssh_login $source "$url" "$settings" >&1
         fi
-			done 10< $conffile
+      done 10< $conffile
 		fi
-done
+  done
 fi
