@@ -52,6 +52,8 @@ while [[ -n $1 ]]; do
               file=$1;;
       --env) shift
              export SYNC_ENV=$1;;
+      -c | --client ) shift
+              client=$1;;
 			*)  echo "Only push, pull, set-conf are allowed actions"
 					exit 1
 				;;
@@ -73,6 +75,9 @@ if [ -z "$SYNC_ENV" ]; then
   SYNC_ENV=""
 fi
 
+if [ -n "$client" ]; then
+  echo "Only syncing with ${client} client."
+fi
 # collect all conf-files in an array
 files=()
 if [ -n "$2" ]; then
@@ -87,6 +92,7 @@ fi
 
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
+    echo "Reading $(basename $conffile)"
 		if [ -f $conffile ]; then
       # read conf files line by line and start client for each line
       # read needs to use a different descriptor for stdin because we will run a ssh command inside which also reads from stdin
@@ -111,7 +117,7 @@ if [ ${#files[@]} -ne 0 ]; then
           echo "$source" | grep -q 'env'
           is_env_restricted=$?
           if [ $is_env_restricted -eq 0 ] && [ -z "$SYNC_ENV" ]; then
-            #conf file restricted to certain environments, but no environment
+            # conf file restricted to certain environments, but no environment
             # specified. skip
             break
           fi
@@ -129,19 +135,22 @@ if [ ${#files[@]} -ne 0 ]; then
           fi
 
 				  case "$source" in
-					  \[git\])   mode="git"
-                      check_client_available "git"
-                      [ $? != 0 ] && break
-                      ;;
+					  \[git\])    mode="git"
+                        check_client_available "git"
+                        [ $? != 0 ] && break
+                        ;;
 					 \[unison\])  mode="unison"
                         [ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
                         check_client_available "unison"
                         [ $? != 0 ] && break
                         ;;
-                    *)  echo "The sync mode '${mode}' is not supported."
+                    *)  echo "The sync mode '${source}' is not supported."
                         break
                         ;;
 				  esac
+          if [ "$mode" != "$client" ]; then
+            echo "Syncing with ${mode} is ignored."
+          fi
 				  continue
 			  fi
         if [ -z "$mode" ]; then
@@ -149,6 +158,9 @@ if [ ${#files[@]} -ne 0 ]; then
           break;
         fi
 
+        if [ "$mode" != "$client" ]; then
+          continue
+        fi
         if [ "$action" == 'save_settings' ]; then
           execute="${mode}-settings"
           $DIR/src/$execute $source "$settings" >&1
