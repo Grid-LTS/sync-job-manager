@@ -3,7 +3,7 @@
 ### Description
 This script automates the task of syncing folders and projects (databases) on client computers with a central server. It builds on other software for data synchronization between distributed systems.
 At the moment support for Git & Unison is implemented, but other protocols like rsync are planned for the future.
-In case of Git **all** branches in for those projects, which are stated in the *.conf files, will be synced with the server.  
+In case of Git **all** branches in for those projects, which are stated in the *.conf files, will be synced with the server.
 
 ### Usage
 for pulling changes from the server
@@ -14,6 +14,13 @@ for pushing to the server
 ```
 ./server-sync.sh push $conf-file
 ```
+#### Options
+cmd | descr
+--- | ----
+\-\-force, -f  | syncing will be overwrite destination (in case of push) or overwrite local files (in case of pull)
+-c &lt;client>  | select client, at the moment only git and unison are available; if none is given, all syncing clients are used
+\-\-env &lt;name>  | select syncing environment, e.g. 'work', the *.conf files can be configured to only apply to a certain environment; all other environments are ignored
+
 for setting the config (name + email address only possible for git repos)
 ```
 ./server-sync.sh set-conf
