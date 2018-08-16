@@ -148,7 +148,7 @@ if [ ${#files[@]} -ne 0 ]; then
                         break
                         ;;
 				  esac
-          if [ "$mode" != "$client" ]; then
+          if [ -n "$client" ] && [ "$mode" != "$client" ]; then
             echo "Syncing with ${mode} is ignored."
           fi
 				  continue
@@ -158,7 +158,7 @@ if [ ${#files[@]} -ne 0 ]; then
           break;
         fi
 
-        if [ "$mode" != "$client" ]; then
+        if [ -n "$client" ] && [ "$mode" != "$client" ]; then
           continue
         fi
         if [ "$action" == 'save_settings' ]; then
