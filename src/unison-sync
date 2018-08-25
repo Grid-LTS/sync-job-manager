@@ -57,10 +57,22 @@ server_path="ssh://${ssh_login}/${server_path}"
 
 #prepare profile for the unison sync
 # copy the right profile template and replace the parameters
-sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$profile_file
 
+sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$profile_file
 # finally sync files with the profile
-unison -auto $profile
+
+if [ $force = 1 ]; then
+  if [ $action = 'push' ];  then
+    unison $profile -force  "$local_path"
+  fi
+  if [ $action = 'pull' ]; then
+    unison $profile -force  "$server_path"
+  fi
+else 
+  unison -auto $profile
+fi
+
+
 # clean up
 rm ~/.unison/$profile_file
 echo -e "\n"
