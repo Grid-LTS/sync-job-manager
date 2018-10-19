@@ -78,17 +78,22 @@ fi
 if [ -n "$client" ]; then
   echo "Only syncing with ${client} client."
 fi
-# collect all conf-files in an array
-files=()
-if [ -n "$2" ]; then
-	files+=("$2")
-else
-	i=0
-	while read -r -d ''; do
-		files+=("$REPLY")
-	done < <(find -L $confdir -type f -name '*.conf' -print0)
-fi
 
+if [ -z "$file" ]; then
+  # no file specified as argument
+  # collect all conf-files in an array
+  files=()
+  if [ -n "$2" ]; then
+  	files+=("$2")
+  else
+  	i=0
+  	while read -r -d ''; do
+  		files+=("$REPLY")
+  	done < <(find -L $confdir -type f -name '*.conf' -print0)
+  fi
+else
+  files=($file)
+fi
 
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
