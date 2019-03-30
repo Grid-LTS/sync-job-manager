@@ -55,7 +55,7 @@ ssh $ssh_login "mkdir -p ${remote_path}"
 #server_path must contain ssh login
 server_path="ssh://${ssh_login}/${server_path}"
 
-#prepare profile for the unison sync
+# prepare profile for the unison sync
 # copy the right profile template and replace the parameters
 
 sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$profile_file
