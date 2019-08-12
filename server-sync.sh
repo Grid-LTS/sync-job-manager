@@ -102,7 +102,7 @@ if [ ${#files[@]} -ne 0 ]; then
       # read conf files line by line and start client for each line
       # read needs to use a different descriptor for stdin because we will run a ssh command inside which also reads from stdin
       # see https://unix.stackexchange.com/questions/107800/using-while-loop-to-ssh-to-multiple-servers
-			while read -u10 line || [ -n "$line" ];
+      while read -u10 line || [ -n "$line" ];
         do
         source=$(awk '{print $1}' <<< "$line")
         url=$(awk '{print $2}' <<< "$line")
@@ -113,56 +113,57 @@ if [ ${#files[@]} -ne 0 ]; then
         #remove trailing whitespace
         settings=$(echo -e "${settings}" | sed -e 's/[[:space:]]*$//')
         # read config line by line
-			  source=${source// } # remove spaces
-			  # ignore comments or empty lines
-			  if [[ "$source" == \#* || "$source" == "" ]]; then
-				  continue
-			  fi
+        source=${source// } # remove spaces
+        # ignore comments or empty lines
+        if [[ "$source" == \#* || "$source" == "" ]]; then
+          continue
+        fi
         if [[ -z "$url" ]]; then
-          echo "$source" | grep -q 'env'
-          is_env_restricted=$?
-          if [ $is_env_restricted -eq 0 ] && [ -z "$SYNC_ENV" ]; then
-            # conf file restricted to certain environments, but no environment
-            # specified. skip
-            break
-          fi
-          if [ $is_env_restricted -eq 0 ] && [ -n "$SYNC_ENV" ]; then
-            # check if given environment is part of the specified envs
-            source=${source#env=}
-            IFS_OLD=$IFS
-            # read environemnts into an array $envs
-            IFS=', '
-            read -r -a envs <<< "$source"
-            #stop reading this config file if only valid for another environment
-            ! containsElement "$SYNC_ENV" "${envs[@]}" && break
-            IFS=$IFS_OLD
-            continue
-          fi
-
-				  case "$source" in
-					  \[git\])    mode="git"
-                        check_client_available "git"
-                        [ $? != 0 ] && break
-                        ;;
-					 \[unison\])  mode="unison"
-                        [ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
-                        check_client_available "unison"
-                        [ $? != 0 ] && break
-                        ;;
-                    *)  echo "The sync mode '${source}' is not supported."
-                        break
-                        ;;
-				  esac
+              echo "$source" | grep -q 'env'
+              is_env_restricted=$?
+              if [ $is_env_restricted -eq 0 ] && [ -z "$SYNC_ENV" ]; then
+                # conf file restricted to certain environments, but no environment
+                # specified. skip
+                break
+              fi
+              if [ $is_env_restricted -eq 0 ] && [ -n "$SYNC_ENV" ]; then
+                # check if given environment is part of the specified envs
+                source=${source#env=}
+                IFS_OLD=$IFS
+                # read environemnts into an array $envs
+                IFS=', '
+                read -r -a envs <<< "$source"
+                #stop reading this config file if only valid for another environment
+                ! containsElement "$SYNC_ENV" "${envs[@]}" && break
+                IFS=$IFS_OLD
+                continue
+              fi
+    		  source=${source//[\[\]$'\t\r\n']}
+    		  case "$source" in
+    			  git)
+    				check_client_available "git"
+    				[ $? != 0 ] && break
+    				mode="git"
+    				;;
+    			  unison)
+    				[ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
+    				check_client_available "unison"
+    				[ $? != 0 ] && break
+    				mode="unison"
+    				;;
+    			*)  echo "The sync mode '${source}' is not supported."
+    				break
+    				;;
+    		  esac
           if [ -n "$client" ] && [ "$mode" != "$client" ]; then
             echo "Syncing with ${mode} is ignored."
           fi
-				  continue
-			  fi
+    		  continue
+        fi
         if [ -z "$mode" ]; then
           echo 'No syncing tool given. Ignore conffile'
           break;
         fi
-
         if [ -n "$client" ] && [ "$mode" != "$client" ]; then
           continue
         fi
@@ -185,6 +186,6 @@ if [ ${#files[@]} -ne 0 ]; then
           $DIR/src/$execute $action $force $ssh_login $source "$url" "$settings" >&1
         fi
       done 10< $conffile
-		fi
+    fi
   done
 fi
