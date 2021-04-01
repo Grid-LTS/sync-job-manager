@@ -73,7 +73,11 @@ fi
 if [ -z "$SYNC_ENV" ]; then
   echo "Environment parameter \$SYNC_ENV is not set."
   SYNC_ENV=""
+  exit 1
 fi
+
+echo "Use sync environment $SYNC_ENV"
+
 
 if [ -n "$client" ]; then
   echo "Only syncing with ${client} client."
@@ -97,6 +101,7 @@ fi
 
 if [ ${#files[@]} -ne 0 ]; then
 	for conffile in ${files[@]}; do
+    echo ""
     echo "Reading $(basename $conffile)"
 		if [ -f $conffile ]; then
       # read conf files line by line and start client for each line
@@ -131,11 +136,12 @@ if [ ${#files[@]} -ne 0 ]; then
                 source=${source#env=}
                 IFS_OLD=$IFS
                 # read environemnts into an array $envs
-                IFS=', '
+                IFS=','
                 read -r -a envs <<< "$source"
+                echo "Config file only applies to environments ${envs[@]}"
+                IFS=$IFS_OLD
                 #stop reading this config file if only valid for another environment
                 ! containsElement "$SYNC_ENV" "${envs[@]}" && break
-                IFS=$IFS_OLD
                 continue
               fi
     		  source=${source//[\[\]$'\t\r\n']}

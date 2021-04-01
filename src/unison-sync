@@ -46,7 +46,7 @@ template_dir=unison-templates
 if [ -f $DIR/$template_dir/$profile_file ]; then
   template_path=$DIR/$template_dir/$profile_file
 else
-  echo "${confdir}/${template_dir}/${profile_file}"
+  # DEBUG echo "${confdir}/${template_dir}/${profile_file}"
   if [ -f $confdir/$template_dir/$profile_file ]; then
     template_path=$confdir/$template_dir/$profile_file
   else
