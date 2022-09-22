@@ -77,13 +77,16 @@ sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $t
 
 if [ $force = 1 ]; then
   if [ $action = 'push' ];  then
-    unison $profile -force  "$local_path"
+    unison $profile -force  $local_path
+    echo "unison $profile -force  ${local_path}"
   fi
   if [ $action = 'pull' ]; then
-    unison $profile -force  "$server_path"
+    unison $profile -force  $server_path
+    echo "unison $profile -force  $server_path"
   fi
 else 
   unison -auto $profile
+  echo "unison -auto $profile"
 fi
 
 
