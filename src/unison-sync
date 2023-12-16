@@ -77,16 +77,16 @@ sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $t
 
 if [ $force = 1 ]; then
   if [ $action = 'push' ];  then
-    unison $profile -force  $local_path
-    echo "unison $profile -force  ${local_path}"
+    unison $profile -force  $local_path -ignorearchives
+    echo "run: unison $profile -force  ${local_path} -ignorearchives"
   fi
   if [ $action = 'pull' ]; then
-    unison $profile -force  $server_path
-    echo "unison $profile -force  $server_path"
+    unison $profile -force  $server_path -ignorearchives
+    echo "run: unison $profile -force  $server_path -ignorearchives"
   fi
 else 
-  unison -auto $profile
-  echo "unison -auto $profile"
+  unison -auto $profile -ignorearchives
+  echo "run: unison -auto $profile -ignorearchives"
 fi
 
 

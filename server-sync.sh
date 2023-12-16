@@ -51,7 +51,7 @@ while [[ -n $1 ]]; do
 			--file) shift
               file=$1;;
       --env) shift
-             export SYNC_ENV=$1;;
+             export BACKUP_SYNC_ENV=$1;;
       -c | --client ) shift
               client=$1;;
 			*)  echo "Only push, pull, set-conf are allowed actions"
@@ -70,13 +70,13 @@ if [ -z "$force" ]; then
   force=0
 fi
 
-if [ -z "$SYNC_ENV" ]; then
-  echo "Environment parameter \$SYNC_ENV is not set."
-  SYNC_ENV=""
+if [ -z "$BACKUP_SYNC_ENV" ]; then
+  echo "Environment parameter \$BACKUP_SYNC_ENV is not set."
+  BACKUP_SYNC_ENV=""
   exit 1
 fi
 
-echo "Use sync environment $SYNC_ENV"
+echo "Use sync environment $BACKUP_SYNC_ENV"
 
 
 if [ -n "$client" ]; then
@@ -126,12 +126,12 @@ if [ ${#files[@]} -ne 0 ]; then
         if [[ -z "$url" ]]; then
               echo "$source" | grep -q 'env'
               is_env_restricted=$?
-              if [ $is_env_restricted -eq 0 ] && [ -z "$SYNC_ENV" ]; then
+              if [ $is_env_restricted -eq 0 ] && [ -z "$BACKUP_SYNC_ENV" ]; then
                 # conf file restricted to certain environments, but no environment
                 # specified. skip
                 break
               fi
-              if [ $is_env_restricted -eq 0 ] && [ -n "$SYNC_ENV" ]; then
+              if [ $is_env_restricted -eq 0 ] && [ -n "$BACKUP_SYNC_ENV" ]; then
                 # check if given environment is part of the specified envs
                 source=${source#env=}
                 IFS_OLD=$IFS
@@ -141,7 +141,7 @@ if [ ${#files[@]} -ne 0 ]; then
                 echo "Config file only applies to environments ${envs[@]}"
                 IFS=$IFS_OLD
                 #stop reading this config file if only valid for another environment
-                ! containsElement "$SYNC_ENV" "${envs[@]}" && break
+                ! containsElement "$BACKUP_SYNC_ENV" "${envs[@]}" && break
                 continue
               fi
     		  source=${source//[\[\]$'\t\r\n']}
