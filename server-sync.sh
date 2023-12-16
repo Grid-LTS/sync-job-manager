@@ -3,7 +3,7 @@
 # set global parameters
 IFS=' '
 
-mode="git"
+mode="unison"
 cwd=$(pwd)
 force=0
 
@@ -109,16 +109,24 @@ if [ ${#files[@]} -ne 0 ]; then
       # see https://unix.stackexchange.com/questions/107800/using-while-loop-to-ssh-to-multiple-servers
       while read -u10 line || [ -n "$line" ];
         do
-        source=$(awk '{print $1}' <<< "$line")
-        url=$(awk '{print $2}' <<< "$line")
+        sourcepath=$(echo "$line" | grep -o '".*"' | sed 's/"//g')
+        if [ -z "$sourcepath" ]; then
+          sourcepath="$( cut -d ' ' -f 1 <<< "$line" )"
+          prepend=""
+          rest=${line//"$sourcepath"/}
+        else
+          prepend="$(awk -F"\"" '{print $1}' <<< "$line")"
+          rest=${line//"${prepend}\"$sourcepath\""/}
+        fi
+        source="${prepend}$sourcepath"
+        url="$(awk '{print $1}' <<< "$rest")"
         # read rest of the line into the settings string
-        settings=$(awk '{$1=$2=""; print $0}' <<< "$line")
+        settings=$(awk '{$1=""; print $0}' <<< "$rest")
         # remove leading white space, see https://stackoverflow.com/questions/369758/how-to-trim-whitespace-from-a-bash-variable
         settings="$(echo -e "${settings}" | sed -e 's/^[[:space:]]*//')"
         #remove trailing whitespace
-        settings=$(echo -e "${settings}" | sed -e 's/[[:space:]]*$//')
+        settings="$(echo -e "${settings}" | sed -e 's/[[:space:]]*$//')"
         # read config line by line
-        source=${source// } # remove spaces
         # ignore comments or empty lines
         if [[ "$source" == \#* || "$source" == "" ]]; then
           continue
@@ -133,7 +141,7 @@ if [ ${#files[@]} -ne 0 ]; then
               fi
               if [ $is_env_restricted -eq 0 ] && [ -n "$BACKUP_SYNC_ENV" ]; then
                 # check if given environment is part of the specified envs
-                source=${source#env=}
+                source="${source#env=}"
                 IFS_OLD=$IFS
                 # read environemnts into an array $envs
                 IFS=','
@@ -144,13 +152,8 @@ if [ ${#files[@]} -ne 0 ]; then
                 ! containsElement "$BACKUP_SYNC_ENV" "${envs[@]}" && break
                 continue
               fi
-    		  source=${source//[\[\]$'\t\r\n']}
+    		  source="${source//[\[\]$'\t\r\n']}"
     		  case "$source" in
-    			  git)
-    				check_client_available "git"
-    				[ $? != 0 ] && break
-    				mode="git"
-    				;;
     			  unison)
     				[ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
     				check_client_available "unison"
@@ -163,7 +166,7 @@ if [ ${#files[@]} -ne 0 ]; then
     		  esac
           if [ -n "$client" ] && [ "$mode" != "$client" ]; then
             echo "Syncing with ${mode} is ignored."
-          fi
+          fi  
     		  continue
         fi
         if [ -z "$mode" ]; then
@@ -189,7 +192,7 @@ if [ ${#files[@]} -ne 0 ]; then
           fi
           # sync with repos
           execute="${mode}-sync"
-          $DIR/src/$execute $action $force $ssh_login $source "$url" "$settings" >&1
+          $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" >&1
         fi
       done 10< $conffile
     fi

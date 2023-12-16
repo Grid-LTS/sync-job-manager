@@ -30,7 +30,7 @@ for setting the config (name + email address only possible for git repos)
 - Git repositories have to be set up and wired by yourself for each client and the server
 - *.conf-files: the path to the local Git project and the remote url of the server repo have to be provided in conf-files
 - *.conf files should be in the home directory under ~/.sync-conf or can be provided as an argument to the call
-- best would be to set up an easy authentification method with the server, like a key-based method, in order to avoid prompts when running the script
+- best would be to set up an easy authentication method with the server, like a key-based method, in order to avoid prompts when running the script
 - for setting the git config for a repo, you need to provide the name + email address next to the repository path
 
 
