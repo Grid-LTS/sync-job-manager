@@ -24,15 +24,7 @@ fi
 
 # load global properties like host, ssh-login
 if [ -f "$SYNC_CONFIG_HOME/server-sync.properties" ]; then
-  while IFS== read -r VAR1 VAR2
-  do
-    if [[ "$VAR1" == \#* || "$VAR2" == "" ]]; then
-      continue
-    fi
-    if [ -n "$VAR2" ]; then
-      export "$VAR1=$VAR2"
-    fi
-  done < "$SYNC_CONFIG_HOME/server-sync.properties"
+  . "$SYNC_CONFIG_HOME/server-sync.properties"
 else
   #initialize variables
   export ssh_user=''
@@ -182,8 +174,7 @@ if [ ${#files[@]} -ne 0 ]; then
         else
           ssh_login=""
           # check if ssh login information is given, if yes overwrite default values
-          prefix_ssh_login
-          if [ -z "$ssh_login" ] && [ -n "$ssh_host" ] && [ -n "$ssh_user" ]; then
+          if [ -z "$ssh_login" ] && [ -n "$ssh_host" ] && [ -n "$ssh_host" ]; then
             ssh_login="${ssh_user}@${ssh_host}"
           fi
           if [ -z "$ssh_login" ]; then

@@ -12,6 +12,7 @@ server_path=$1
 shift
 profile=$1
 
+
 if [ -z "$DIR" ]; then
   SOURCE="${BASH_SOURCE[0]}"
   while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -28,6 +29,8 @@ fi
 
 local_path="${local_path/#\~/$HOME}"
 mkdir ~/.unison &> /dev/null
+base=$(basename $local_path)
+
 
 if [ -z "$profile" ]; then
   #if no unison profile chose, use default profile
@@ -36,60 +39,76 @@ fi
 
 if [[ "$profile" != *\.prf ]]; then
   # get profile file name by appending suffix
-  profile_file=$profile'.prf'
+  template_profile_file="$profile.prf"
+  concrete_profile_file="${base}_$profile.prf"
 else
-  profile_file=$profile
-  profile=${profile/%\.prf}
+  template_profile_file=$profile
+  concrete_profile_file=$template_profile_file
 fi
+profile=${concrete_profile_file/%\.prf}
+
 
 template_dir=unison-templates
-if [ -f $DIR/$template_dir/$profile_file ]; then
-  template_path=$DIR/$template_dir/$profile_file
+if [ -f $DIR/$template_dir/$template_profile_file ]; then
+  template_path=$DIR/$template_dir/$template_profile_file
 else
-  # DEBUG echo "${confdir}/${template_dir}/${profile_file}"
-  if [ -f $confdir/$template_dir/$profile_file ]; then
-    template_path=$confdir/$template_dir/$profile_file
+  # DEBUG echo "${confdir}/${template_dir}/${template_profile_file}"
+  if [ -f $confdir/$template_dir/$template_profile_file ]; then
+    template_path=$confdir/$template_dir/$template_profile_file
   else
-    echo "Unison template file ${profile_file} cannot be found."
+    echo "Unison template file ${template_profile_file} cannot be found."
     exit 1
   fi
 fi
 
-remote_path=$server_path
+remote_path="$server_path"
 
 #create directories, locally and remotely
-if [ ! -d $local_path ]; then
-  mkdir -p $local_path
+if [ ! -d "$local_path" ]; then
+  mkdir -p "$local_path"
 fi
 echo "unison sync ${local_path}"
 
-# create path on remote machine for syncing
-ssh $ssh_login "mkdir -p ${remote_path}"
-
 #server_path must contain ssh login
-server_path="ssh://${ssh_login}/${server_path}"
+server_path_prefix="ssh://${ssh_login}/"
+if [ -n "$ssh_login" ] && [[ "$server_path" == "$server_path_prefix"* ]]; then
+    remote_path=${server_path#"$server_path_prefix"}
+     # create path on remote machine for syncing
+    echo "Create server directory: $remote_path"
+    ssh $ssh_login "mkdir -p ${remote_path}"
+  else
+    if [[ ! "$remote_path" == ssh* ]]; then
+      mkdir -p "${remote_path}"
+    fi
+    server_path_prefix=""
+fi
 
+echo "server path: ${server_path}"
 # prepare profile for the unison sync
 # copy the right profile template and replace the parameters
 
-sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$profile_file
+if [ ! -f  ~/.unison/$concrete_profile_file ]; then
+  sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$concrete_profile_file
+fi
 # finally sync files with the profile
 
 if [ $force = 1 ]; then
   if [ $action = 'push' ];  then
-    unison $profile -force  $local_path -ignorearchives
-    echo "run: unison $profile -force  ${local_path} -ignorearchives"
+    unison $profile -force  "$local_path"
+    echo "run: unison $profile -force  ${local_path}"
   fi
   if [ $action = 'pull' ]; then
-    unison $profile -force  $server_path -ignorearchives
-    echo "run: unison $profile -force  $server_path -ignorearchives"
+    unison $profile -force  "$server_path"
+    echo "run: unison $profile -force  $server_path"
   fi
-else 
-  unison -auto $profile -ignorearchives
-  echo "run: unison -auto $profile -ignorearchives"
+else
+  # do not ignore archive
+  # they ensure that files are properly checked if updated
+  unison -auto $profile
+  echo "run: unison -auto $profile"
 fi
 
 
 # clean up
-rm ~/.unison/$profile_file
+#rm ~/.unison/$template_profile_file
 echo -e "\n"
