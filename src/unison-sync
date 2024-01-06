@@ -48,8 +48,9 @@ fi
 echo $local_path
 
 mkdir ~/.unison &> /dev/null
-base=$(basename $local_path)
-
+base="$(basename $local_path)"
+base2="$(basename "$(dirname $local_path)")"
+base="${base2}_${base}"
 
 if [ -z "$profile" ]; then
   #if no unison profile chose, use default profile
