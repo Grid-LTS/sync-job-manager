@@ -28,6 +28,21 @@ if [ -z "$confdir" ]; then
 fi
 
 local_path="${local_path/#\~/$HOME}"
+
+is_win=$([ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ] && echo "1")
+if [ $is_win = 1 ]; then
+   local_path=$(cygpath -w "$local_path" | sed 's/\\/\\\\/g')
+   drive_letter=${local_path:0:1}
+   drive_letter=$(echo $drive_letter | tr a-z A-Z)
+   local_path="${drive_letter}${local_path:1}"
+   psh_script=$HOME/bin/unison-sync.ps1
+   psh_script_force=$HOME/bin/unison-sync-force.ps1
+   touch $psh_script
+   touch $psh_script_force
+fi
+
+echo $local_path
+
 mkdir ~/.unison &> /dev/null
 base=$(basename $local_path)
 
@@ -42,19 +57,18 @@ if [[ "$profile" != *\.prf ]]; then
   template_profile_file="$profile.prf"
   concrete_profile_file="${base}_$profile.prf"
 else
-  template_profile_file=$profile
-  concrete_profile_file=$template_profile_file
+  template_profile_file="$profile"
+  concrete_profile_file="$template_profile_file"
 fi
 profile=${concrete_profile_file/%\.prf}
 
-
 template_dir=unison-templates
-if [ -f $DIR/$template_dir/$template_profile_file ]; then
-  template_path=$DIR/$template_dir/$template_profile_file
+if [ -f "$DIR/$template_dir/$template_profile_file" ]; then
+  template_path="$DIR/$template_dir/$template_profile_file"
 else
   # DEBUG echo "${confdir}/${template_dir}/${template_profile_file}"
-  if [ -f $confdir/$template_dir/$template_profile_file ]; then
-    template_path=$confdir/$template_dir/$template_profile_file
+  if [ -f "$confdir/$template_dir/$template_profile_file" ]; then
+    template_path="$confdir/$template_dir/$template_profile_file"
   else
     echo "Unison template file ${template_profile_file} cannot be found."
     exit 1
@@ -67,7 +81,7 @@ remote_path="$server_path"
 if [ ! -d "$local_path" ]; then
   mkdir -p "$local_path"
 fi
-echo "unison sync ${local_path}"
+
 
 #server_path must contain ssh login
 server_path_prefix="ssh://${ssh_login}/"
@@ -92,22 +106,34 @@ if [ ! -f  ~/.unison/$concrete_profile_file ]; then
 fi
 # finally sync files with the profile
 
-if [ $force = 1 ]; then
-  if [ $action = 'push' ];  then
-    unison $profile -force  "$local_path"
-    echo "run: unison $profile -force  ${local_path}"
-  fi
-  if [ $action = 'pull' ]; then
-    unison $profile -force  "$server_path"
-    echo "run: unison $profile -force  $server_path"
-  fi
-else
-  # do not ignore archive
-  # they ensure that files are properly checked if updated
-  unison -auto $profile
-  echo "run: unison -auto $profile"
+if [[ $is_win == "1" ]] ; then
+  local_path=${local_path//\\\\/\\}
 fi
+echo "unison sync ${local_path}"
 
+if [ $action = 'push' ];  then
+  command_suffix_force="$profile -force  ${local_path}"
+fi
+if [ $action = 'pull' ]; then
+  command_suffix_force="$profile -force  ${server_path}"
+fi
+# do not ignore archive
+# they ensure that files are properly checked if updated
+command_suffix="-auto $profile"
+
+
+if [ $force = 1 ]; then
+  read -ra options <<< "$command_suffix_force"
+else
+  read -ra options <<< "$command_suffix"
+fi
+if [[ $is_win == "1" ]] ; then
+  echo "unison.exe $command_suffix" >> $psh_script
+  echo "unison.exe $command_suffix_force" >> $psh_script_force
+else
+  unison ${options[*]}
+  echo "run: unison ${options[*]}"
+fi
 
 # clean up
 #rm ~/.unison/$template_profile_file
