@@ -48,8 +48,10 @@ fi
 echo $local_path
 
 mkdir ~/.unison &> /dev/null
-base="$(basename $local_path)"
-base2="$(basename "$(dirname $local_path)")"
+base="$(basename "$local_path")"
+base2="$(basename "$(dirname "$local_path")")"
+base="${base// /-}"
+base2="${base2// /-}"
 base="${base2}_${base}"
 
 if [ -z "$profile" ]; then
@@ -106,9 +108,11 @@ echo "server path: ${server_path}"
 # prepare profile for the unison sync
 # copy the right profile template and replace the parameters
 
-if [ ! -f  ~/.unison/$concrete_profile_file ]; then
-  sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" $template_path >  ~/.unison/$concrete_profile_file
+if [ -f  ~/.unison/"$concrete_profile_file" ]; then
+  rm  ~/.unison/"$concrete_profile_file"
 fi
+sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" "$template_path" >  ~/.unison/"$concrete_profile_file"
+
 # finally sync files with the profile
 
 if [[ $is_win == "1" ]] ; then
