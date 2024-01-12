@@ -11,7 +11,8 @@ shift
 server_path=$1
 shift
 profile=$1
-
+shift
+is_win=$1
 
 if [ -z "$DIR" ]; then
   SOURCE="${BASH_SOURCE[0]}"
@@ -29,20 +30,19 @@ fi
 
 local_path="${local_path/#\~/$HOME}"
 
-if [ "$(uname)" == "Darwin" ]; then
-  is_win="0"
-else
-  is_win=$([ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ] && echo "1")
-fi
 if [[ $is_win == "1" ]]; then
-   local_path=$(cygpath -w "$local_path" | sed 's/\\/\\\\/g')
-   drive_letter=${local_path:0:1}
-   drive_letter=$(echo $drive_letter | tr a-z A-Z)
-   local_path="${drive_letter}${local_path:1}"
-   psh_script=$HOME/bin/unison-sync.ps1
-   psh_script_force=$HOME/bin/unison-sync-force.ps1
-   touch $psh_script
-   touch $psh_script_force
+  local_path=$(cygpath -w "$local_path" | sed 's/\\/\\\\/g')
+  drive_letter=${local_path:0:1}
+  drive_letter=$(echo $drive_letter | tr a-z A-Z)
+  local_path="${drive_letter}${local_path:1}"
+  psh_script=$HOME/bin/unison-sync.ps1
+  psh_script_force=$HOME/bin/unison-sync-force.ps1
+  if [ ! -f "$psh_script" ]; then
+    touch $psh_script
+  fi
+  if [ ! -f "$psh_script_force" ]; then
+    touch $psh_script_force
+  fi
 fi
 
 echo $local_path

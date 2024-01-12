@@ -22,6 +22,21 @@ if [ -z "$SYNC_CONFIG_HOME" ]; then
   export SYNC_CONFIG_HOME=$DIR
 fi
 
+if [ "$(uname)" == "Darwin" ]; then
+  is_win="0"
+else
+  is_win=$([ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ] && echo "1")
+fi
+
+if [[ $is_win == "1" ]]; then
+  psh_script=$HOME/bin/unison-sync.ps1
+  psh_script_force=$HOME/bin/unison-sync-force.ps1
+  # will be regenerated
+  rm $psh_script
+  rm $psh_script_force
+fi
+
+
 # load global properties like host, ssh-login
 if [ -f "$SYNC_CONFIG_HOME/server-sync.properties" ]; then
   . "$SYNC_CONFIG_HOME/server-sync.properties"
@@ -183,7 +198,7 @@ if [ ${#files[@]} -ne 0 ]; then
           fi
           # sync with repos
           execute="${mode}-sync"
-          $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" >&1
+          $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" "$is_win" >&1
         fi
       done 10< $conffile
     fi
