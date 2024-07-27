@@ -16,6 +16,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 export DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+echo "Current directory ${DIR}"
 
 # settings directory that contains global and client specific parameters (credentials, paths)
 if [ -z "$SYNC_CONFIG_HOME" ]; then
@@ -32,8 +33,12 @@ if [[ $is_win == "1" ]]; then
   psh_script=$HOME/bin/unison-sync.ps1
   psh_script_force=$HOME/bin/unison-sync-force.ps1
   # will be regenerated
-  rm $psh_script
-  rm $psh_script_force
+  if [ -f $psh_script ]; then
+    rm $psh_script
+  fi
+  if [ -f $psh_script_force ]; then
+    rm $psh_script_force
+  fi
 fi
 
 
