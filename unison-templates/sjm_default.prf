@@ -2,3 +2,13 @@
 # will be used when no profile is given in the *.conf files
 root = @local_path@
 root = @server_path@
+
+ignore = Name .directory
+ignore = Name .DS_Store
+ignore = Name *.DS_Store
+ignore = Name ._.DS_Store
+ignore = Name *.o
+ignore = Name *.tmp
+ignore = Name .~lock.*
+ignore = Name {*/,.*/}node_modules
+ignore = Name metadata.db
