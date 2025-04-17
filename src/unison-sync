@@ -70,9 +70,13 @@ fi
 profile=${concrete_profile_file/%\.prf}
 
 template_dir=unison-templates
+template_file_path=$DIR/$template_dir/$template_profile_file
+echo "Check for template in $template_file_path"
 if [ -f "$DIR/$template_dir/$template_profile_file" ]; then
   template_path="$DIR/$template_dir/$template_profile_file"
 else
+  template_file_path=$confdir/$template_dir/$template_profile_file
+  echo "Check for template in $template_file_path"
   # DEBUG echo "${confdir}/${template_dir}/${template_profile_file}"
   if [ -f "$confdir/$template_dir/$template_profile_file" ]; then
     template_path="$confdir/$template_dir/$template_profile_file"
