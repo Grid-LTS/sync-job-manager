@@ -105,14 +105,14 @@ if [ -z "$file" ]; then
   	i=0
   	while read -r -d ''; do
   		files+=("$REPLY")
-  	done < <(find -L $confdir -type f -name '*.conf' -print0)
+  	done < <(find -L $confdir -maxdepth 1 -type f -name '*.conf' -print0)
   fi
 else
   files=($file)
 fi
 
 if [ ${#files[@]} -ne 0 ]; then
-	for conffile in ${files[@]}; do
+  for conffile in ${files[@]}; do
     echo ""
     echo "Reading $(basename $conffile)"
 		if [ -f $conffile ]; then
@@ -144,42 +144,56 @@ if [ ${#files[@]} -ne 0 ]; then
           continue
         fi
         if [[ -z "$url" ]]; then
-              echo "$source" | grep -q 'env'
-              is_env_restricted=$?
-              if [ $is_env_restricted -eq 0 ] && [ -z "$BACKUP_SYNC_ENV" ]; then
-                # conf file restricted to certain environments, but no environment
-                # specified. skip
-                break
+          if [[ "$source" =~ \[([a-zA-Z0-9_]+)\] ]]; then
+            block_is_valid=0
+            sync_client="${BASH_REMATCH[1]}"
+            echo "Sync client: $sync_client"
+            case "$sync_client" in
+              unison)
+              [ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
+              check_client_available "unison"
+              [ $? != 0 ] && break
+              mode="unison"
+              ;;
+            *)  echo "The sync mode '${sync_client}' is not supported."
+              break
+              ;;
+            esac
+            if [ -n "$client" ] && [ "$mode" != "$client" ]; then
+              echo "Syncing with ${mode} is ignored."
+            fi  
+    		    continue
+    		  else
+            source="${source//[\[\]$'\t\r\n']}"
+            echo "$source" | grep -q 'env'
+            is_env_restricted=$?
+            if [ $is_env_restricted -eq 0 ] && [ -z "$BACKUP_SYNC_ENV" ]; then
+              # conf file restricted to certain environments, but no environment
+              # specified. skip
+              block_is_valid=0
+            fi
+            if [ $is_env_restricted -eq 0 ] && [ -n "$BACKUP_SYNC_ENV" ]; then
+              # check if given environment is part of the specified envs
+              source="${source#env=}"
+              IFS_OLD=$IFS
+              # read environemnts into an array $envs
+              IFS=','
+              read -r -a envs <<< "$source"
+              echo "Config block only applies to environments ${envs[@]}"
+              IFS=$IFS_OLD
+              # stop reading this config file if only valid for another environment
+              if ! containsElement "$BACKUP_SYNC_ENV" "${envs[@]}"; then 
+                block_is_valid=0
+              else
+                block_is_valid=1
               fi
-              if [ $is_env_restricted -eq 0 ] && [ -n "$BACKUP_SYNC_ENV" ]; then
-                # check if given environment is part of the specified envs
-                source="${source#env=}"
-                IFS_OLD=$IFS
-                # read environemnts into an array $envs
-                IFS=','
-                read -r -a envs <<< "$source"
-                echo "Config file only applies to environments ${envs[@]}"
-                IFS=$IFS_OLD
-                #stop reading this config file if only valid for another environment
-                ! containsElement "$BACKUP_SYNC_ENV" "${envs[@]}" && break
-                continue
-              fi
-    		  source="${source//[\[\]$'\t\r\n']}"
-    		  case "$source" in
-    			  unison)
-    				[ $action == 'save_settings' ] &&  echo 'No settings can be saved for unison projects' && break
-    				check_client_available "unison"
-    				[ $? != 0 ] && break
-    				mode="unison"
-    				;;
-    			*)  echo "The sync mode '${source}' is not supported."
-    				break
-    				;;
-    		  esac
-          if [ -n "$client" ] && [ "$mode" != "$client" ]; then
-            echo "Syncing with ${mode} is ignored."
-          fi  
-    		  continue
+            fi
+            continue
+          fi
+        fi
+        if [ $block_is_valid -eq 0 ]; then
+          # skip this block as it is not valid for the given environment
+          continue
         fi
         if [ -z "$mode" ]; then
           echo 'No syncing tool given. Ignore conffile'
