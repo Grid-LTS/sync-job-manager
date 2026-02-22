@@ -6,6 +6,7 @@ IFS=' '
 mode="unison"
 cwd=$(pwd)
 force=0
+is_backup=0
 
 export confdir="${HOME}/.sync-conf"
 
@@ -46,10 +47,16 @@ fi
 if [ -f "$SYNC_CONFIG_HOME/server-sync.properties" ]; then
   . "$SYNC_CONFIG_HOME/server-sync.properties"
 else
-  #initialize variables
-  export ssh_user=''
-  export ssh_host=''
+    #initialize variables
+    export ssh_user=''
+    export ssh_host=''
+  
 fi
+
+if [ -f "$DIR/server-sync.properties" ]; then
+    . "$DIR/server-sync.properties"
+fi
+
 
 . $DIR/src/helper.sh
 
@@ -60,12 +67,13 @@ while [[ -n $1 ]]; do
 			set-conf | set-config) action=save_settings
 						                 ;;
 			-f | --force) force=1;;
-			--file) shift
+--file) shift
               file=$1;;
-      --env) shift
-             export BACKUP_SYNC_ENV=$1;;
-      -c | --client ) shift
-              client=$1;;
+       --env) shift
+              export BACKUP_SYNC_ENV=$1;;
+       --backup | --backup-sync) is_backup=1;;
+       -c | --client ) shift
+               client=$1;;
 			*)  echo "Only push, pull, set-conf are allowed actions"
 					exit 1
 				;;
@@ -206,18 +214,27 @@ if [ ${#files[@]} -ne 0 ]; then
           execute="${mode}-settings"
           $DIR/src/$execute $source "$settings" >&1
         else
-          ssh_login=""
-          # check if ssh login information is given, if yes overwrite default values
-          if [ -z "$ssh_login" ] && [ -n "$ssh_host" ] && [ -n "$ssh_host" ]; then
-            ssh_login="${ssh_user}@${ssh_host}"
+          # Check for backup mode or unison mode
+          if [ "$is_backup" == "1" ]; then
+            # Backup mode - use rsync locally
+            execute="backup-sync"
+            # Pass minimal args - ssh-login, server-path, settings not used
+            $DIR/src/$execute $action $force "$source" "$is_win" >&1
+          else
+            # Unison mode - process normally with SSH
+            ssh_login=""
+            # check if ssh login information is given, if yes overwrite default values
+            if [ -z "$ssh_login" ] && [ -n "$ssh_user" ] && [ -n "$ssh_user" ]; then
+              ssh_login="${ssh_user}@${ssh_host}"
+            fi
+            if [ -z "$ssh_login" ]; then
+              echo "No ssh login available for target $url"
+              continue
+            fi
+            # sync with repos
+            execute="${mode}-sync"
+            $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" "$is_win" >&1
           fi
-          if [ -z "$ssh_login" ]; then
-            echo "No ssh login available for target $url"
-            continue
-          fi
-          # sync with repos
-          execute="${mode}-sync"
-          $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" "$is_win" >&1
         fi
       done 10< $conffile
     fi

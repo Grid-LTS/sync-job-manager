@@ -1,0 +1,74 @@
+#!/bin/bash
+
+action=$1
+shift
+force=$1
+shift
+source=$1
+shift
+is_win=$1
+
+if [ -z "$DIR" ]; then
+  # Setup directory path
+  SOURCE="${BASH_SOURCE[0]}"
+  while [ -h "$SOURCE" ]; do
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  done
+  export DIR="$dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
+fi
+
+# Read backup_root_dir from server-sync.properties
+backup_root_dir=""
+# Load backup settings from properties files
+if [ -f "$DIR/server-sync.properties" ]; then
+  . "$DIR/server-sync.properties"
+fi
+
+# Validate backup_root_dir
+if [ -z "$backup_root_dir" ]; then
+  echo "ERROR: backup_root_dir not set in server-sync.properties"
+  exit 1
+fi
+
+# Strip ~ from source path
+local_path="${source/\~/\$HOME}"
+
+# Generate relative path for backup
+relative_path="${local_path#\$\HOME/}"
+
+# Construct full backup destination
+backup_fullpath="$backup_root_dir/$relative_path"
+
+if [ -n "$backup_host" ]; then
+  backup_fullpath="$backup_host:${backup_fullpath}"
+fi
+
+# Handle Windows paths
+if [[ "$is_win" == "1" ]]; then
+  backup_fullpath=$(cygpath -w "$backup_fullpath" | sed 's/\\/\\\\/g')
+fi
+
+# Create destination directories
+mkdir -p "$backup_fullpath"
+
+echo "Processing backup operation for: $source"
+echo "Destination: $backup_fullpath"
+
+# Build rsync flags
+rsync_flags="-av"
+if [ "$force" == "1" ]; then
+  rsync_flags="$rsync_flags -f"
+fi
+
+cwrsync.cmd "$rsync_flags" "${local_path}/" "$backup_fullpath/"
+
+
+# Check rsync exit code
+if [ $? -ne 0 ]; then
+  echo "ERROR: rsync failed for $source"
+  exit 1
+fi
+
+echo "Backup completed successfully: $source"
