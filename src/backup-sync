@@ -19,6 +19,11 @@ if [ -z "$DIR" ]; then
   export DIR="$dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
 fi
 
+if  [ -z "$source" ]; then
+  echo "ERROR: No source path provided for backup operation"
+  exit 1
+fi
+
 # Read backup_root_dir from server-sync.properties
 backup_root_dir=""
 # Load backup settings from properties files
@@ -33,17 +38,14 @@ if [ -z "$backup_root_dir" ]; then
 fi
 
 # Strip ~ from source path
-local_path="${source/\~/\$HOME}"
+source_path="${source/\~/$HOME}"
 
 # Generate relative path for backup
-relative_path="${local_path#\$\HOME/}"
+relative_path="${source/\~\/}"  # Remove leading ~/
 
 # Construct full backup destination
 backup_fullpath="$backup_root_dir/$relative_path"
 
-if [ -n "$backup_host" ]; then
-  backup_fullpath="$backup_host:${backup_fullpath}"
-fi
 
 # Handle Windows paths
 if [[ "$is_win" == "1" ]]; then
@@ -51,6 +53,7 @@ if [[ "$is_win" == "1" ]]; then
 fi
 
 # Create destination directories
+echo "Creating backup directory: $backup_fullpath"
 mkdir -p "$backup_fullpath"
 
 echo "Processing backup operation for: $source"
@@ -62,7 +65,14 @@ if [ "$force" == "1" ]; then
   rsync_flags="$rsync_flags -f"
 fi
 
-cwrsync.cmd "$rsync_flags" "${local_path}/" "$backup_fullpath/"
+if [[ "$is_win" == "1" ]]; then
+  binary=cwrsync.cmd
+else
+  binary=rsync
+fi
+
+echo "Running command: $binary $rsync_flags ${source_path}/ $backup_fullpath/"
+"$binary" "$rsync_flags" "${source_path}/" "$backup_fullpath/"
 
 
 # Check rsync exit code
@@ -71,4 +81,4 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Backup completed successfully: $source"
+echo ""

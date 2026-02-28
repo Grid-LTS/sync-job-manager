@@ -3,6 +3,9 @@
 root = @local_path@
 root = @server_path@
 
+batch = true
+auto = true
+
 ignore = Name .directory
 ignore = Name .DS_Store
 ignore = Name *.DS_Store

@@ -6,7 +6,7 @@ force=$1
 shift
 ssh_login=$1
 shift
-local_path=$1
+source_path=$1
 shift
 server_path=$1
 shift
@@ -28,7 +28,7 @@ if [ -z "$confdir" ]; then
   export confdir="${HOME}/.sync-conf"
 fi
 
-local_path="${local_path/#\~/$HOME}"
+local_path="${source_path/#\~/$HOME}"
 
 if [[ $is_win == "1" ]]; then
   local_path=$(cygpath -w "$local_path" | sed 's/\\/\\\\/g')
@@ -54,7 +54,11 @@ base="${base// /-}"
 base2="${base2// /-}"
 base="${base2}_${base}"
 
-if [ -z "$profile" ]; then
+if [[ "$profile" == "backup" ]]; then
+  is_backup=1
+fi
+
+if [[ -z "$profile" ]]; then
   #if no unison profile chose, use default profile
   profile=sjm_default
 fi
@@ -95,10 +99,11 @@ fi
 
 
 #server_path must contain ssh login
-server_path_prefix="ssh://${ssh_login}/"
-if [ -n "$ssh_login" ] && [[ "$server_path" == "$server_path_prefix"* ]]; then
+if [[ $is_backup != "1" ]]; then
+  server_path_prefix="ssh://${ssh_login}/"
+  if [ -n "$ssh_login" ] && [[ "$server_path" == "$server_path_prefix"* ]]; then
     remote_path=${server_path#"$server_path_prefix"}
-     # create path on remote machine for syncing
+    # create path on remote machine for syncing
     echo "Create server directory: $remote_path"
     ssh $ssh_login "mkdir -p ${remote_path}"
   else
@@ -106,6 +111,15 @@ if [ -n "$ssh_login" ] && [[ "$server_path" == "$server_path_prefix"* ]]; then
       mkdir -p "${remote_path}"
     fi
     server_path_prefix=""
+  fi
+else
+  backup_root_dir=$server_path
+  server_path_prefix=""
+  # Generate relative path for backup
+  relative_path="${source_path/\~\/}"  # Remove leading ~/
+  # Construct full backup destination
+  server_path="$backup_root_dir/$relative_path"
+  mkdir -p "$server_path"
 fi
 
 echo "server path: ${server_path}"
@@ -118,22 +132,28 @@ fi
 sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" "$template_path" >  ~/.unison/"$concrete_profile_file"
 
 # finally sync files with the profile
-
 if [[ $is_win == "1" ]] ; then
   local_path=${local_path//\\\\/\\}
 fi
-echo "unison sync ${local_path}"
 
-if [ $action = 'push' ];  then
+if [[ $is_backup == "1" ]]; then
   command_suffix_force="$profile -force  ${local_path}"
-fi
-if [ $action = 'pull' ]; then
-  command_suffix_force="$profile -force  ${server_path}"
-fi
-# do not ignore archive
-# they ensure that files are properly checked if updated
-command_suffix="-auto $profile"
+  force=1
+else
+  
+  echo "unison sync ${local_path}"
 
+  if [ $action = 'push' ];  then
+    command_suffix_force="$profile -force  ${local_path}"
+  fi
+  if [ $action = 'pull' ]; then
+    command_suffix_force="$profile -force  ${server_path}"
+  fi
+  # do not ignore archive
+  # they ensure that files are properly checked if updated
+  command_suffix="-auto $profile"
+
+fi
 
 if [ $force = 1 ]; then
   read -ra options <<< "$command_suffix_force"
@@ -144,8 +164,8 @@ if [[ $is_win == "1" ]] ; then
   echo "unison.exe $command_suffix" >> $psh_script
   echo "unison.exe $command_suffix_force" >> $psh_script_force
 else
-  unison ${options[*]}
   echo "run: unison ${options[*]}"
+  unison ${options[*]}
 fi
 
 # clean up

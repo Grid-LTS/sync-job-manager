@@ -67,7 +67,7 @@ while [[ -n $1 ]]; do
 			set-conf | set-config) action=save_settings
 						                 ;;
 			-f | --force) force=1;;
---file) shift
+      --file) shift
               file=$1;;
        --env) shift
               export BACKUP_SYNC_ENV=$1;;
@@ -163,7 +163,7 @@ if [ ${#files[@]} -ne 0 ]; then
               [ $? != 0 ] && break
               mode="unison"
               ;;
-            *)  echo "The sync mode '${sync_client}' is not supported."
+              *)  echo "The sync mode '${sync_client}' is not supported."
               break
               ;;
             esac
@@ -214,16 +214,30 @@ if [ ${#files[@]} -ne 0 ]; then
           execute="${mode}-settings"
           $DIR/src/$execute $source "$settings" >&1
         else
+          ssh_login=""
           # Check for backup mode or unison mode
           if [ "$is_backup" == "1" ]; then
-            # Backup mode - use rsync locally
-            execute="backup-sync"
-            # Pass minimal args - ssh-login, server-path, settings not used
-            $DIR/src/$execute $action $force "$source" "$is_win" >&1
+            settings="backup"
+            # Read backup_root_dir from server-sync.properties
+            backup_root_dir=""
+            echo "BACKUP MODE"
+            # Load backup settings from properties files
+            if [ -f "$DIR/server-sync.properties" ]; then
+              . "$DIR/server-sync.properties"
+            fi
+            ssh_login="no_ssh"
+            # Validate backup_root_dir
+            if [ -z "$backup_root_dir" ]; then
+              echo "ERROR: backup_root_dir not set in server-sync.properties"
+              exit 1
+            fi
+            url=$backup_root_dir
           else
-            # Unison mode - process normally with SSH
-            ssh_login=""
-            # check if ssh login information is given, if yes overwrite default values
+            if [ "$settings" == "backup" ]; then
+              echo "$source will only be backed up, not synced. Skip."
+              continue
+            fi
+             # check if ssh login information is given, if yes overwrite default values
             if [ -z "$ssh_login" ] && [ -n "$ssh_user" ] && [ -n "$ssh_user" ]; then
               ssh_login="${ssh_user}@${ssh_host}"
             fi
@@ -231,10 +245,11 @@ if [ ${#files[@]} -ne 0 ]; then
               echo "No ssh login available for target $url"
               continue
             fi
-            # sync with repos
-            execute="${mode}-sync"
-            $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" "$is_win" >&1
           fi
+          # Unison mode - process normally with SSH
+          # sync with repos
+          execute="${mode}-sync"
+          $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" "$is_win" >&1
         fi
       done 10< $conffile
     fi
