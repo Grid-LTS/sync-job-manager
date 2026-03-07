@@ -4,8 +4,6 @@ action=$1
 shift
 force=$1
 shift
-ssh_login=$1
-shift
 source_path=$1
 shift
 server_path=$1
@@ -13,6 +11,8 @@ shift
 profile=$1
 shift
 is_win=$1
+shift
+ssh_login=$1
 
 if [ -z "$DIR" ]; then
   SOURCE="${BASH_SOURCE[0]}"
@@ -27,6 +27,11 @@ fi
 if [ -z "$confdir" ]; then
   export confdir="${HOME}/.sync-conf"
 fi
+
+case "$ssh_login" in
+    no_ssh|NULL|null) ssh_login="";;
+esac
+
 
 local_path="${source_path/#\~/$HOME}"
 

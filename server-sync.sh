@@ -237,19 +237,25 @@ if [ ${#files[@]} -ne 0 ]; then
               echo "$source will only be backed up, not synced. Skip."
               continue
             fi
+            
              # check if ssh login information is given, if yes overwrite default values
-            if [ -z "$ssh_login" ] && [ -n "$ssh_user" ] && [ -n "$ssh_user" ]; then
+            if [ -z "$ssh_login" ] && [ -n "$ssh_user" ] && [ -n "$ssh_host" ]; then
               ssh_login="${ssh_user}@${ssh_host}"
             fi
-            if [ -z "$ssh_login" ]; then
-              echo "No ssh login available for target $url"
-              continue
+            if [[ -z "$ssh_login" ]]; then
+              if [[ $url == "ssh"* ]]; then
+                echo "No ssh login available for target $url"
+                continue
+              else
+                ssh_login="no_ssh"
+              fi
             fi
+            echo "SSH login: $ssh_login"
           fi
           # Unison mode - process normally with SSH
           # sync with repos
           execute="${mode}-sync"
-          $DIR/src/$execute $action $force $ssh_login "$source" "$url" "$settings" "$is_win" >&1
+          $DIR/src/$execute $action $force "$source" "$url" "$settings" "$is_win" "$ssh_login" >&1
         fi
       done 10< $conffile
     fi
