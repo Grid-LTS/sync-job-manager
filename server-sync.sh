@@ -218,20 +218,20 @@ if [ ${#files[@]} -ne 0 ]; then
           # Check for backup mode or unison mode
           if [ "$is_backup" == "1" ]; then
             settings="backup"
-            # Read backup_root_dir from server-sync.properties
-            backup_root_dir=""
+            # Read backup_target_root_dir from server-sync.properties
+            backup_target_root_dir=""
             echo "BACKUP MODE"
             # Load backup settings from properties files
             if [ -f "$DIR/server-sync.properties" ]; then
               . "$DIR/server-sync.properties"
             fi
             ssh_login="no_ssh"
-            # Validate backup_root_dir
-            if [ -z "$backup_root_dir" ]; then
-              echo "ERROR: backup_root_dir not set in server-sync.properties"
+            # Validate backup_target_root_dir
+            if [ -z "$backup_target_root_dir" ]; then
+              echo "ERROR: backup_target_root_dir not set in server-sync.properties"
               exit 1
             fi
-            url=$backup_root_dir
+            url=$backup_target_root_dir
           else
             if [ "$settings" == "backup" ]; then
               echo "$source will only be backed up, not synced. Skip."

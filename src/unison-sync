@@ -24,6 +24,10 @@ if [ -z "$DIR" ]; then
   DIR=$(dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )")
 fi
 
+if [ -f "$DIR/server-sync.properties" ]; then
+    . "$DIR/server-sync.properties"
+fi
+
 if [ -z "$confdir" ]; then
   export confdir="${HOME}/.sync-conf"
 fi
@@ -118,12 +122,17 @@ if [[ $is_backup != "1" ]]; then
     server_path_prefix=""
   fi
 else
-  backup_root_dir=$server_path
+  backup_target_root_dir=$server_path
   server_path_prefix=""
   # Generate relative path for backup
   relative_path="${source_path/\~\/}"  # Remove leading ~/
+  if [[ -n "$backup_source_root_dir" ]]; then
+    relative_path="${relative_path/#$backup_source_root_dir/}"  
+  fi
+  # remove leading slashes if exists
+  relative_path="${relative_path##/}"
   # Construct full backup destination
-  server_path="$backup_root_dir/$relative_path"
+  server_path="$backup_target_root_dir/$relative_path"
   mkdir -p "$server_path"
 fi
 
