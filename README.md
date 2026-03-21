@@ -14,6 +14,10 @@ for pushing to the server
 ```
 ./server-sync.sh push $conf-file
 ```
+
+for initial sync or when syncing from scratch after deleting the archive files
+./server-sync.sh push --force --batch
+
 #### Options
 cmd | descr
 --- | ----

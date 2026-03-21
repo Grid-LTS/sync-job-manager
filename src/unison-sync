@@ -4,6 +4,8 @@ action=$1
 shift
 force=$1
 shift
+is_batch=$1
+shift
 source_path=$1
 shift
 server_path=$1
@@ -145,6 +147,11 @@ if [ -f  ~/.unison/"$concrete_profile_file" ]; then
 fi
 sed -e "s|@local_path@|${local_path}|g" -e "s|@server_path@|${server_path}|g" "$template_path" >  ~/.unison/"$concrete_profile_file"
 
+if [[ $is_batch == "1" ]] ; then
+  echo "batch = true" >> ~/.unison/"$concrete_profile_file"
+  echo "auto = true" >> ~/.unison/"$concrete_profile_file"
+fi
+
 # finally sync files with the profile
 if [[ $is_win == "1" ]] ; then
   local_path=${local_path//\\\\/\\}
@@ -166,7 +173,6 @@ else
   # do not ignore archive
   # they ensure that files are properly checked if updated
   command_suffix="-auto $profile"
-
 fi
 
 if [ $force = 1 ]; then
@@ -180,6 +186,10 @@ if [[ $is_win == "1" ]] ; then
 else
   echo "run: unison ${options[*]}"
   unison ${options[*]}
+fi
+
+if [[ $is_batch == "1" ]] ; then
+  rm ~/.unison/"$concrete_profile_file"
 fi
 
 # clean up

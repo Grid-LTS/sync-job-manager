@@ -72,6 +72,7 @@ while [[ -n $1 ]]; do
        --env) shift
               export BACKUP_SYNC_ENV=$1;;
        --backup | --backup-sync) is_backup=1;;
+        --batch) is_batch=1;;
        -c | --client ) shift
                client=$1;;
 			*)  echo "Only push, pull, set-conf are allowed actions"
@@ -255,7 +256,7 @@ if [ ${#files[@]} -ne 0 ]; then
           # Unison mode - process normally with SSH
           # sync with repos
           execute="${mode}-sync"
-          $DIR/src/$execute $action $force "$source" "$url" "$settings" "$is_win" "$ssh_login" >&1
+          $DIR/src/$execute $action "$force" "$is_batch" "$source" "$url" "$settings" "$is_win" "$ssh_login" >&1
         fi
       done 10< $conffile
     fi
